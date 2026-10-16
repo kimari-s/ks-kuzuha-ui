@@ -1,0 +1,511 @@
+/* UDEV Gothic — JetBrains Mono + BIZ UDGothic merged with width-coordinated
+   half/full-width metrics. https://github.com/yuru7/udev-gothic */
+@font-face {
+  font-family: "UDEV Gothic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/UDEVGothic-Regular.ttf?v=hs-jpdoc") format("truetype");
+}
+@font-face {
+  font-family: "UDEV Gothic";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/UDEVGothic-Bold.ttf?v=hs-jpdoc") format("truetype");
+}
+
+:root {
+  /* Colour theme — every board colour below is one OKLCH hue (--hue) with
+     fixed lightness / chroma, so switching hue keeps contrast even.
+     --hue 195 reproduces the original blackboard palette (#004040 etc.) exactly
+     in 8-bit sRGB. The viewer's hue is set on <html> by theme.ts. */
+  --hue: 195;
+  --bg: oklch(33.64% 0.0574 var(--hue)); /* #004040 */
+  --bg-deep: oklch(15.67% 0.0267 var(--hue)); /* #001010 */
+  --bg-darker: oklch(22.05% 0.0376 var(--hue)); /* #002020 */
+  --fg: #f0f0f0;
+  /* Accent — the colour of things that move (hover, pressed, focus), like
+     Streamlit's primaryColor. Never painted on anything at rest. It mixes
+     the text white toward a vivid colour of hue --accent-hue by
+     --accent-strength (0-1): 0 = #f0f0f0 (the plain look, so hover colours
+     stay as they were), 1 at hue 15.59 = red #ff4466. Independent of
+     --hue. The viewer's values are set on <html> by theme.ts, which also sets
+     <html data-accent> when the strength is above 0 (rules whose default
+     state colour is not the text white switch to the accent only then). */
+  --accent-hue: 15.59;
+  --accent-strength: 0;
+  --accent: color-mix(in oklch, #f0f0f0, oklch(0.669 0.2213 var(--accent-hue)) calc(var(--accent-strength) * 100%));
+  --muted-fg: rgba(240, 240, 240, 1);
+  --subtle-fg: rgba(240, 240, 240, 1);
+  --border: rgba(240, 240, 240, 0.5);
+  --border-soft: rgba(240, 240, 240, 0.3);
+  --link: oklch(84.46% 0.0384 var(--hue)); /* #b0d4d4 — sw cyan, chalk-pale tuned slightly darker (saturation kept) */
+  --rule: oklch(57.86% 0.0882 var(--hue)); /* #268a8a — tree-view ├└│ */
+  --sep: oklch(74.15% 0.0638 var(--hue)); /* #7ab8b8 — "|" between links: link rows, pager (sw cyan) */
+  /* ■ menu dropdown: neutral greys, outside the theme (no hue, no accent).
+     Same OKLCH lightness as the former cyan-tinted #1e2626 / #3a4444 / #6c7a7a. */
+  --menu-bg: #242424;
+  --menu-hover: #424242;
+  --menu-off: #777777;
+  --error: #ff8080;
+  --font-ui: "UDEV Gothic", monospace;
+  --font-mono: "UDEV Gothic", monospace;
+}
+
+/* Browsers without oklch(): fixed blackboard palette (theme switching is a no-op). */
+@supports not (color: oklch(0% 0 0)) {
+  :root {
+    --bg: #004040;
+    --bg-deep: #001010;
+    --bg-darker: #002020;
+    --link: #b0d4d4;
+    --rule: #268a8a;
+    --sep: #7ab8b8;
+  }
+}
+/* Browsers without color-mix() / oklch(): the accent stays the text white. */
+@supports not (color: color-mix(in oklch, oklch(0% 0 0), #fff 50%)) {
+  :root { --accent: #f0f0f0; }
+}
+
+html { max-height: 100%; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 6px 10px;
+}
+
+a:link, a:visited {
+  color: var(--link);
+  transition: color 0.12s;
+  text-decoration: none;
+}
+a:hover { color: var(--accent); }
+a:active { color: var(--accent); }
+a.help { text-decoration: underline; }
+
+/* underline only inside post body (color alone too subtle in long text) */
+.msgnormal a, .msgnormal a:link, .msgnormal a:visited {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--link) 40%, transparent);
+  text-underline-offset: 2px;
+}
+.msgnormal a:hover { text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+
+hr { border: 0 none; height: 1px; background-color: var(--border); color: var(--border); margin: 4px 0; }
+main > hr { margin: 0.5em 0; }
+
+/* Board title */
+.pagetitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  text-align: left;
+  margin-right: 0.5em;
+}
+.pagetitle a, .pagetitle a:link, .pagetitle a:visited {
+  color: var(--fg);
+  text-decoration: none;
+}
+.pagetitle a:hover, .pagetitle a:active { color: var(--fg); } /* the board name does not react to hover */
+
+/* Top / bottom link rows — separator hex sits darker + slightly more saturated
+   than the link cyan, so the row reads as one nav family. Anchors
+   override back to full --link via the global a:link. Direct hex
+   instead of opacity because alpha-blending against bg desaturates. */
+.link_upper, .link_row {
+  font-size: 0.8rem;
+  color: var(--sep);
+}
+
+/* Forms */
+.postform p { margin: 0.5em 0; }
+.postform label {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--muted-fg);
+  margin-right: 0.4em;
+}
+input[type="text"], textarea {
+  max-width: 100%;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid var(--border-soft);
+  border-radius: 2px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  padding: 3px 6px;
+}
+textarea {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.15;
+  padding: 6px 8px;
+}
+/* Date fields: the text fields' 1px border instead of the browser's 2px one,
+   so the focus colour below sits on the same thin line. */
+input[type="date"] {
+  border: 1px solid var(--border-soft);
+  border-radius: 2px;
+}
+input[type="text"]:focus, input[type="date"]:focus, textarea:focus {
+  outline: none;
+  border-color: var(--link);
+}
+
+/* gray-filled button (kuzuha-classic silver feel) → cyan tint on hover */
+input[type="button"], input[type="submit"], input[type="reset"] {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  padding: 3px 12px;
+  background: #dcdcdc;
+  color: var(--bg-darker);
+  border: 1px solid #888888;
+  border-radius: 2px;
+  cursor: pointer;
+  margin-right: 0.3em;
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+/* hover: a slight tint from the board colour (--link follows --hue; cyan on
+   the default blackboard). Pressed: the accent. */
+input[type="button"]:hover, input[type="submit"]:hover, input[type="reset"]:hover {
+  background: color-mix(in srgb, var(--link) 35%, #dcdcdc);
+  border-color: var(--link);
+}
+input[type="button"]:active, input[type="submit"]:active, input[type="reset"]:active {
+  background: var(--accent);
+  color: var(--bg-darker);
+  border-color: var(--accent);
+}
+input[type="button"]:disabled, input[type="submit"]:disabled, input[type="reset"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+input[type="button"]:disabled:hover, input[type="submit"]:disabled:hover, input[type="reset"]:disabled:hover {
+  background: #dcdcdc;
+  color: var(--bg-darker);
+  border-color: #888888;
+}
+
+/* Accent on (<html data-accent>, set by theme.ts when the accent strength
+   is above 0): text-field focus border (cyan) and keyboard focus outlines
+   (browser default) take the accent instead. With strength 0 none of this
+   applies, so the default look is untouched.
+   Quiet and sharp: a faint 1px ring of the accent just outside the edge, no
+   blur. Text fields also tint their own 1px border toward the accent; other
+   controls get only the ring (no outline). --focus-glow is shared so both
+   look the same. */
+:root[data-accent] {
+  --focus-glow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+:root[data-accent] :is(input[type="text"], input[type="date"], textarea):focus {
+  border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+  box-shadow: var(--focus-glow);
+}
+:root[data-accent] :is(a, summary, input, select, button):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-glow);
+}
+
+/* Theme-coloured controls (<html data-controls="custom">, set by theme.ts;
+   the settings page's 「入力欄・選択範囲」 option). Text fields, date fields and selects
+   go dark like Streamlit inputs under secondaryBackgroundColor #002828 (=
+   oklch(25.07% 0.0428 194.8)), following --hue, and selected text takes the
+   accent like a pressed button. "standard" leaves the browser's look.
+   :where() keeps these at the plain element rules' weight, so the focus
+   borders above still win. */
+:root {
+  --input-bg: oklch(25.07% 0.0428 var(--hue));
+}
+@supports not (color: oklch(0% 0 0)) {
+  :root { --input-bg: #002828; }
+}
+:where(:root[data-controls="custom"]) :is(input[type="text"], input[type="date"], textarea, select) {
+  background: var(--input-bg);
+  color: var(--fg);
+  border: 1px solid var(--input-bg);
+  /* Native parts (date picker, select list, caret) in their dark variant. */
+  color-scheme: dark;
+}
+:where(:root[data-controls="custom"]) :is(input[type="text"], textarea)::placeholder {
+  color: color-mix(in srgb, var(--fg) 45%, transparent);
+}
+:where(:root[data-controls="custom"]) ::selection {
+  background: var(--accent);
+  color: var(--bg-darker);
+}
+
+/* spacing when a submit button follows a text input on the same line */
+input[type="text"] + input[type="submit"] {
+  margin-left: 0.5em;
+}
+
+.small { font-size: 0.85rem; }
+
+main { display: block; margin-top: 4px; }
+.ngline { display: block; }
+.m { padding: 0.4em 0; }
+
+.mnum { display: none; } /* post numbers hidden (kuzuha default) */
+.ms { color: var(--fg); font-size: 1.05rem; font-weight: 600; }
+.mu { font-size: 0.85rem; color: var(--muted-fg); }
+.mun { font-size: 0.9rem; font-weight: 500; color: var(--fg); font-family: var(--font-ui); }
+.md { font-size: 0.8rem; font-family: var(--font-mono); }
+.nb, a.help { font-size: 0.95rem; white-space: normal; }
+.nb a { text-decoration: none; }
+
+div.contents { margin-left: 27px; }
+@media screen and (max-width: 640px) {
+  div.contents { margin-left: 10px; }
+}
+pre.msgnormal {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0.3em 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--fg);
+}
+@media screen and (min-width: 640px) {
+  pre.msgnormal { font-size: 15px; }
+}
+.q { color: rgba(240, 240, 240, 0.55); }
+.q a, .q a:link, .q a:visited { color: var(--link); }
+.q a:hover { color: var(--accent); }
+
+.thumb-strip { display: flex; flex-wrap: wrap; gap: 0.4em; margin: 0.4em 0; }
+.thumb {
+  max-height: 200px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+
+/* "[NEW]" since-last-visit marker on post headers — inline-code styling
+   (#001010 bg + faint border) so the lime-olive text stays sharp instead
+   of going washed-out the way an opacity-only treatment did. */
+.new-marker {
+  color: #99CC33;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  padding: 0.05em 0.2em;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: bold;
+}
+
+/* Account / login icon at the trailing edge of the link row. The icon
+   font itself is loaded inline by PostForm via React 19's <link> hoist. */
+.account-link .material-symbols-outlined {
+  font-family: "Material Symbols Outlined" !important;
+  font-variation-settings: "opsz" 20, "wght" 400, "FILL" 0, "GRAD" 0;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: -0.2em;
+  text-transform: none;
+  letter-spacing: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+
+.copyright { font-size: 0.78rem; text-align: right; color: var(--subtle-fg); }
+.copyright a, .copyright a:link, .copyright a:visited { color: var(--subtle-fg); }
+.copyright a:hover { color: var(--accent); }
+/* settings page — plain browser controls */
+/* settings page — laid out on the same label | field grid as the search form (.searchform) */
+.settings-form input[type="range"] { width: 18em; max-width: 100%; vertical-align: middle; }
+.settings-form output { display: inline-block; min-width: 3.5em; font-family: var(--font-mono); }
+/* section heading: a full-width row of the grid */
+.settings-form .settings-section { grid-column: 1 / -1; margin: 0; font-size: 1em; font-weight: bold; }
+.settings-form input[type="checkbox"] { vertical-align: middle; margin: 0 0.3em 0 0; }
+/* About block under the settings form: versions, in the muted footer colour */
+.settings-form.about { margin-top: 1.5em; color: var(--subtle-fg); }
+
+.bbsstats {
+  font-size: 0.78rem;
+  color: var(--muted-fg);
+  font-family: var(--font-mono);
+  margin: 0.5em 0;
+}
+.bottom-controls { margin: 0.5em 0; }
+
+/* spacing between the submit / triangle / Latest 30 posts in action rows */
+.small > a { margin-left: 0.5em; }
+
+.post-menu {
+  text-decoration: none;
+  font-size: 14px;
+  color: var(--link);
+}
+.post-menu:link, .post-menu:visited { color: var(--link); text-decoration: none; }
+.post-menu:hover { color: var(--link); text-decoration: none; } /* ■ menu takes no accent */
+
+.mun:empty { display: none; }
+
+/* tree view */
+.thread-head {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  margin: 0.3em 0 0.5em 0;
+  color: var(--fg);
+}
+pre.msgtree {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre;
+  margin: 0;
+  color: var(--fg);
+}
+pre.msgtree .tree-rule { color: var(--rule); }
+pre.msgtree a:not(.post-menu),
+pre.msgtree a:not(.post-menu):link,
+pre.msgtree a:not(.post-menu):visited {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--link) 40%, transparent);
+  text-underline-offset: 2px;
+}
+pre.msgtree a:not(.post-menu):hover { text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+
+
+/* Tags — in the standard view, #tag at the right end of the post's last line
+   (the poster's tag too). The last line is always there, tags or not, and
+   doubles as the blank line closing the post */
+.post-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-height: 1.6em;
+  font-size: 0.85rem;
+  line-height: 1.6em;
+}
+.post-foot .tag-chip:last-child { margin-right: 0; }
+.tag-chip, .tag-chip:link, .tag-chip:visited {
+  color: var(--link);
+  margin-right: 0.6em;
+  white-space: nowrap;
+}
+/* Poster name — a link narrowing to that poster's posts (not a tag): no #, no
+   special colour, just the link colour */
+a.poster-link, a.poster-link:link, a.poster-link:visited { color: var(--link); }
+a.poster-link:hover { color: var(--accent); }
+.subtitle { font-weight: 400; }
+
+/* Pager — the "|" separator in the top link row's colour (--sep) */
+.pager { margin: 0.4em 0; color: var(--sep); }
+.pager .pager-pos { color: var(--fg); }
+.pager-off { color: var(--border-soft); }
+
+
+/* Tree view: tags at the end of the first line, apart from the underlined
+   links in the body */
+pre.msgtree a.tree-tag, pre.msgtree a.tree-tag:link, pre.msgtree a.tree-tag:visited,
+pre.msgtree a.poster-link, pre.msgtree a.poster-link:link, pre.msgtree a.poster-link:visited {
+  text-decoration: none;
+}
+pre.msgtree a.tree-tag { font-size: 0.85em; margin-right: 0; }
+
+/* Every link hovers alike: its colour turns --accent (by default the same
+   white as --fg). URLs in the body are underlined; tags (inline #tag, the tag
+   row, poster names) are not */
+a:hover,
+.msgnormal a:hover,
+pre.msgtree a:not(.post-menu):hover { color: var(--accent); }
+.msgnormal a.inline-tag, .msgnormal a.inline-tag:link, .msgnormal a.inline-tag:visited,
+pre.msgtree a.inline-tag, pre.msgtree a.inline-tag:link, pre.msgtree a.inline-tag:visited {
+  color: var(--link);
+  text-decoration: none;
+}
+.msgnormal a.inline-tag:hover, pre.msgtree a.inline-tag:hover,
+.tag-chip:hover { color: var(--accent); }
+
+/* Search mode: two columns, labels and fields; fields share left edge and width */
+.searchform {
+  display: grid;
+  grid-template-columns: max-content auto;
+  justify-content: start;
+  align-items: center;
+  gap: 0.4em 0.8em;
+  margin: 0.5em 0;
+}
+.searchform label { color: var(--muted-fg); }
+.searchform input[type="text"] { width: 18em; box-sizing: border-box; }
+.searchform .search-dates {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.4em;
+  width: 18em;
+}
+.searchform .search-dates input { min-width: 0; width: 100%; box-sizing: border-box; }
+@media screen and (max-width: 480px) {
+  /* Narrow screens: labels above the fields; fields shrink to fit the line,
+     the search button stays right of the keywords */
+  .searchform { grid-template-columns: 1fr; gap: 0.2em; }
+  .searchform > div:not(.search-dates):not(.small) { display: flex; align-items: center; gap: 0.3em; }
+  .searchform input[type="text"] { flex: 1 1 auto; min-width: 0; width: auto; }
+  .searchform .search-dates { width: 100%; max-width: 18em; }
+}
+/* Search hits — a darker background only, text
+   colour unchanged. No padding or radius, so line height and glyph positions
+   stay put */
+mark {
+  background: var(--bg-deep);
+  color: inherit;
+}
+
+/* The post's ■ menu — a plain <details>, styled like the browser's own
+   dropdown (macOS dark list): near-black background, rounded corners, white
+   text, grey background on the hovered / chosen item. Pure black and light
+   grey were too strong, so both are toned down */
+.post-menu-box { display: inline-block; position: relative; }
+.post-menu-box > summary { list-style: none; cursor: pointer; display: inline; }
+.post-menu-box > summary::-webkit-details-marker { display: none; }
+.post-menu-items {
+  position: absolute;
+  left: 0;
+  top: 1.4em;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 7em;
+  padding: 4px;
+  background: var(--menu-bg);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.post-menu-items a, .post-menu-items a:link, .post-menu-items a:visited,
+pre.msgtree .post-menu-items a, pre.msgtree .post-menu-items a:link, pre.msgtree .post-menu-items a:visited {
+  display: block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  color: #ffffff;
+  text-decoration: none;
+}
+.post-menu-items a:hover, .post-menu-items a:focus-visible {
+  background: var(--menu-hover);
+  color: #ffffff;
+  outline: none;
+}
+.post-menu-items .menu-off { display: block; padding: 2px 10px; color: var(--menu-off); cursor: default; }
+.back-link { margin: 0.4em 0; }
+.inline-reply { margin: 0.3em 0 0.6em; }
+
+/* Tags in the heading — title size, link colour; clicking narrows to that tag alone */
+.pagetitle a.title-tag, .pagetitle a.title-tag:link, .pagetitle a.title-tag:visited { color: var(--link); }
+.pagetitle a.title-tag:hover { color: var(--accent); }

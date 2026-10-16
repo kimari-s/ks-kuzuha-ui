@@ -1,0 +1,19 @@
+{
+  "$comment": "Example instance config. Copy, edit, and build with KUZUHA_CONFIG=deploy/<yours>.json. Every key is optional; see README \"Instance config\".",
+  "locale": "en",
+  "messages": { "form.poster": "Name" },
+  "apiBaseUrl": "https://api.example.com",
+  "network": "Strange World",
+  "defaultTags": [],
+  "mainTags": [],
+  "excludeTags": [],
+  "tagsMode": "full",
+  "showTags": true,
+  "theme": { "hue": 195, "accentHue": 15.59, "accentStrength": 0, "controls": "standard" },
+  "links": {
+    "header": [],
+    "related": [{ "label": "uploader", "href": "https://up.example.com/", "newTab": true }],
+    "account": null
+  },
+  "repoUrl": "https://github.com/kimari-s/ks-kuzuha-ui"
+}
