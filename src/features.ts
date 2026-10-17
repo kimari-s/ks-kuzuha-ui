@@ -29,6 +29,8 @@ export type ApiMeta = {
   profile?: string;
   impl?: string;
   impl_version?: string;
+  // kssw, optional: where the implementation's source is (an http(s) URL).
+  impl_url?: string;
   // Older ks-sw-api only (before kssw): the contract version.
   contract?: string;
   features?: string[];

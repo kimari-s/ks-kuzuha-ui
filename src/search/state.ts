@@ -1,6 +1,6 @@
 import type { BoolOp, SearchParams } from "../api";
 import { t } from "../i18n";
-import { DEFAULT_EXCLUDE_TAGS } from "../settings";
+import { EXCLUDE_TAGS } from "../settings";
 import { tagsInteractive } from "../tagMode";
 
 // Search mode lives in the URL of the standard view: #/?mode=search&q=...
@@ -23,7 +23,7 @@ export const EMPTY_SEARCH: SearchState = {
   qOp: "and",
   tags: [],
   tagsOp: "and",
-  excludeTags: DEFAULT_EXCLUDE_TAGS,
+  excludeTags: EXCLUDE_TAGS,
   excludeOp: "or",
   author: "",
   since: "",
@@ -36,7 +36,7 @@ function sameTags(a: string[], b: string[]): boolean {
 
 // Excluded tags differ from the default (only then do they narrow the page).
 function customExclude(s: SearchState): boolean {
-  return !sameTags(s.excludeTags, DEFAULT_EXCLUDE_TAGS) || (s.excludeTags.length > 1 && s.excludeOp !== "or");
+  return !sameTags(s.excludeTags, EXCLUDE_TAGS) || (s.excludeTags.length > 1 && s.excludeOp !== "or");
 }
 
 function op(v: string | null, fallback: BoolOp): BoolOp {
@@ -74,7 +74,7 @@ export function readSearch(params: URLSearchParams): SearchState {
     tagsOp: withTags ? op(params.get("tags_op"), "and") : "and",
     // Absent = the default; present (even empty) = what the user set.
     excludeTags:
-      withTags && params.has("exclude_tags") ? params.getAll("exclude_tags").filter(Boolean) : DEFAULT_EXCLUDE_TAGS,
+      withTags && params.has("exclude_tags") ? params.getAll("exclude_tags").filter(Boolean) : EXCLUDE_TAGS,
     excludeOp: withTags ? op(params.get("exclude_op"), "or") : "or",
     author: params.get("author") ?? "",
     since: params.get("since") ?? "",

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { LOCALE, LOCALE_NAMES, LOCALE_SWITCH, resetViewerLocale, setViewerLocale, t } from "../i18n";
+import { resetScope, scopeOffered, setScope, useScope } from "../scope";
+import { LOCAL_TAGS } from "../settings";
 import { resetViewerTags, setViewerHidesTags, tagsDisplayable, useTagsVisible } from "../tagMode";
 import {
   applyTheme,
@@ -19,6 +21,7 @@ import {
 export function SettingsForm() {
   const [theme, setTheme] = useState<Theme>(currentTheme);
   const hideTags = !useTagsVisible();
+  const scope = useScope();
 
   const update = (next: Theme) => {
     setTheme(next);
@@ -101,6 +104,32 @@ export function SettingsForm() {
             </div>
           </>
         )}
+        {scopeOffered() && (
+          <>
+            <label htmlFor="st-scope-local">{t("settings.listing")}</label>
+            <div>
+              <label>
+                <input
+                  id="st-scope-local"
+                  type="radio"
+                  name="st-scope"
+                  checked={scope === "local"}
+                  onChange={() => setScope("local")}
+                />
+                {t("settings.scopeLocal", { tags: LOCAL_TAGS.join(" ") })}
+              </label>{" "}
+              <label>
+                <input
+                  type="radio"
+                  name="st-scope"
+                  checked={scope === "global"}
+                  onChange={() => setScope("global")}
+                />
+                {t("settings.scopeGlobal")}
+              </label>
+            </div>
+          </>
+        )}
         {LOCALE_SWITCH && (
           <>
             <label htmlFor="st-locale">{t("settings.language")}</label>
@@ -123,6 +152,7 @@ export function SettingsForm() {
             onClick={() => {
               update(defaultTheme());
               resetViewerTags();
+              resetScope();
               resetViewerLocale();
             }}
           />

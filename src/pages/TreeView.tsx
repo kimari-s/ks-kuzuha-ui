@@ -11,7 +11,8 @@ import { BottomControls } from "../components/BottomControls";
 import { Pager } from "../components/Pager";
 import { ThreadTree } from "../components/ThreadTree";
 import { TagCountsContext, useTagCountsFor } from "../tagCounts";
-import { DEFAULT_EXCLUDE_TAGS, DEFAULT_TAGS, MAIN_TAGS } from "../settings";
+import { EXCLUDE_TAGS, POST_TAGS } from "../settings";
+import { listingTags } from "../scope";
 import { READ_ONLY } from "../env";
 import { useSearchParams } from "react-router-dom";
 import { TreeSearchMode } from "../search/TreeSearchMode";
@@ -63,8 +64,8 @@ function TreeBoard() {
 
   async function loadTrees(n = 1): Promise<TreeBundle[]> {
     const roots = await listPosts({
-      tags: MAIN_TAGS,
-      exclude_tags: DEFAULT_EXCLUDE_TAGS,
+      tags: listingTags(),
+      exclude_tags: EXCLUDE_TAGS,
       roots_only: true,
       page: n,
       page_size: ROOTS_PAGE_SIZE,
@@ -76,7 +77,7 @@ function TreeBoard() {
     // server returns far fewer rows.
     const all = await listPosts({
       root_ids: roots.map((r) => r.id),
-      exclude_tags: DEFAULT_EXCLUDE_TAGS,
+      exclude_tags: EXCLUDE_TAGS,
       page_size: ROOTS_PAGE_SIZE * 500,
     });
     const byRoot = new Map<string, Post[]>();
@@ -213,7 +214,7 @@ function TreeBoard() {
       try {
         await createPost({
           text: trimmed,
-          tags: DEFAULT_TAGS,
+          tags: POST_TAGS,
           author: tagInput.trim() || undefined,
           client_id: getClientId(),
         });

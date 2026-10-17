@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import { ACCESS_KEYS, keyHint } from "../accessKeys";
-import { t } from "../i18n";
+import { localized, t } from "../i18n";
 import { TEXT_MAX_LEN } from "../constants";
 import { relatedLinks } from "../config/links";
 import { formatJstDateShort } from "../format";
@@ -116,12 +116,12 @@ export function PostForm({ onSubmit, onUnread, onLatest, postCount, activeCount,
       {relatedLinks.length > 0 && (
         <div className="link_row">
           {relatedLinks.map((l, i) => (
-            <Fragment key={`${l.href}|${l.label}`}>
+            <Fragment key={`${l.href}|${i}`}>
               {i > 0 && <>&nbsp;|&nbsp;</>}
               {l.newTab ? (
-                <a href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
+                <a href={l.href} target="_blank" rel="noopener noreferrer">{localized(l.label)}</a>
               ) : (
-                <a href={l.href}>{l.label}</a>
+                <a href={l.href}>{localized(l.label)}</a>
               )}
             </Fragment>
           ))}

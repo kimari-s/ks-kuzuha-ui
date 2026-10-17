@@ -1,16 +1,61 @@
-import { Fragment, useEffect, useState } from "react";
-import { t } from "../i18n";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { localized, t } from "../i18n";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { authorLabel, hasFilter, isSearchMode, tagsLabel, withSearchForm } from "../search/state";
 import { tagPath } from "../tags";
 import { tagsInteractive, useTagsVisible } from "../tagMode";
 import { TITLE } from "../settings";
 import { accountLink, headerExtraLinks } from "../config/links";
+import { rememberedExposed } from "../selfCheck";
+import { boardReturn } from "../boardReturn";
+import { useMenuClose } from "../hooks/useMenuClose";
+
+// "View": a drop-down of the board views, Standard and Tree, in the look
+// and behaviour of the ■ post menu (<details>, the same classes; a click
+// outside or Escape closes it). Picking one switches the view and keeps the
+// current search / filter (carry). The view being shown is listed greyed
+// out and not clickable. (The old Tree / Standard toggle had no access key.)
+function ViewMenu({ active, carry }: { active: "standard" | "tree" | null; carry: string }) {
+  const box = useRef<HTMLDetailsElement>(null);
+  const [open, setOpen] = useState(false);
+  useMenuClose(box, open);
+  const close = () => box.current?.removeAttribute("open");
+  const item = (view: "standard" | "tree", to: string, label: string, hint: string) =>
+    active === view ? (
+      <span className="menu-off" aria-disabled="true" data-view={view}>{label}</span>
+    ) : (
+      <Link to={to} title={hint} onClick={close} data-view={view}>{label}</Link>
+    );
+  return (
+    <details ref={box} className="post-menu-box view-menu" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary className="view-menu-summary" title={t("header.view.hint")}>{t("header.view")}</summary>
+      <span className="post-menu-items">
+        {item("standard", `/${carry}`, t("header.view.standard"), t("header.standard.hint"))}
+        {item("tree", `/tree${carry}`, t("header.view.tree"), t("header.tree.hint"))}
+      </span>
+    </details>
+  );
+}
+
+// The header item of the view being shown (Search with the search form,
+// Settings on the settings page): marked current, and a toggle back to the
+// board view it was opened from, like "« Back" (or the default view when
+// opened directly).
+function CurrentItem({ label }: { label: string }) {
+  const hint = t("header.current.hint", { label });
+  return (
+    <Link to={boardReturn()} className="current-link" aria-current="page" title={hint} aria-label={hint}>
+      {label}
+    </Link>
+  );
+}
 
 type Props = {
-  // Appended to the board title, e.g. a tag page's "#tag".
-  subtitle?: string;
-  // Tags the page is narrowed to; shown after the title, each a link to its own tag search.
+  // A page of its own (e.g. "User settings"): named in the document title
+  // only. The header's current item already shows where the viewer is.
+  pageName?: string;
+  // Tags the page is narrowed to. They lead the heading, each a link to its
+  // own tag search, with the board title after them in smaller type.
   tags?: string[];
   // Poster the page is narrowed to; shown after the tags as plain text. Not a
   // tag, so the tag display setting doesn't hide it.
@@ -34,15 +79,21 @@ function safeReadAuthHint(key: string): boolean {
   }
 }
 
-export function Header({ subtitle, tags: given = [], author = "" }: Props) {
+export function Header({ pageName, tags: given = [], author = "" }: Props) {
   // Title tags follow the tag display setting (tagMode.ts).
   const tags = useTagsVisible() ? given : [];
   const interactive = tagsInteractive();
   const byAuthor = authorLabel(author);
-  const suffix = [tagsLabel(tags), byAuthor, subtitle].filter(Boolean).join(" ");
-  const title = suffix ? `${TITLE} ${suffix}` : TITLE;
+  const tagged = tags.length > 0;
+  // Narrowed to tags: "#a #b [User: x] - <board>"; else "<board> [User: x]";
+  // a page of its own goes first: "User settings - <board>".
+  const heading = tagged
+    ? `${[tagsLabel(tags), byAuthor].filter(Boolean).join(" ")} - ${TITLE}`
+    : [TITLE, byAuthor].filter(Boolean).join(" ");
+  const title = pageName ? `${pageName} - ${heading}` : heading;
   const location = useLocation();
   const isTree = location.pathname.startsWith("/tree");
+  const onSettings = location.pathname === "/settings";
   const [params] = useSearchParams();
   const searching = isSearchMode(params);
   const filtered = hasFilter(params);
@@ -66,15 +117,20 @@ export function Header({ subtitle, tags: given = [], author = "" }: Props) {
     return () => window.removeEventListener("storage", update);
   }, [authHintKey]);
 
+  // The settings page's security check found private files reachable
+  // earlier in this browser session (selfCheck.ts): a small line under the
+  // header on the other pages, linking to the full warning.
+  const exposed = !onSettings && rememberedExposed().length > 0;
+
   return (
+    <>
     <header>
-      <span className="pagetitle">
-        {/* The board name clears any search and stays in the current view:
-            the plain "/" for the standard view, "/tree" for the tree view. */}
-        <Link to={isTree ? "/tree" : "/"}>{TITLE}</Link>
-        {tags.map((t) => (
+      <span className={tagged ? "pagetitle tagged" : "pagetitle"}>
+        {/* Narrowed to tags: the tags are the heading, on the left; the
+            board name follows, smaller. */}
+        {tags.map((t, i) => (
           <Fragment key={t}>
-            {" "}
+            {i > 0 && " "}
             {interactive ? (
               <Link to={tagPath(t, location.pathname, location.search)} className="title-tag">#{t}</Link>
             ) : (
@@ -82,40 +138,50 @@ export function Header({ subtitle, tags: given = [], author = "" }: Props) {
             )}
           </Fragment>
         ))}
-        {byAuthor && <span className="subtitle"> {byAuthor}</span>}
-        {subtitle && <span className="subtitle"> {subtitle}</span>}
+        {tagged && byAuthor && <span className="subtitle"> {byAuthor}</span>}
+        {tagged && " "}
+        {/* The board name clears any search and stays in the current view:
+            the plain "/" for the standard view, "/tree" for the tree view. */}
+        <Link to={isTree ? "/tree" : "/"} className="board-name">{TITLE}</Link>
+        {!tagged && byAuthor && <span className="subtitle"> {byAuthor}</span>}
       </span>
       <span className="link_upper">
         {accountLink && <link rel="stylesheet" href={ICON_FONT_HREF} />}
-        {isTree ? (
-          <Link to={`/${carry}`} title={t("header.standard.hint")}>{t("header.standard")}</Link>
-        ) : (
-          <Link to={`/tree${carry}`} title={t("header.tree.hint")}>{t("header.tree")}</Link>
-        )}
+        <ViewMenu
+          active={isTree ? "tree" : location.pathname === "/" ? "standard" : null}
+          carry={carry}
+        />
         &nbsp;|&nbsp;
         {/* Switches only the controls at the top; the list stays narrowed. */}
+        {/* The view being shown is a toggle: accent colour and underlined
+            (not by colour alone), aria-current, and a link that does what
+            "« Back" does (boardReturn.ts). */}
         {searching ? (
-          <Link to={`${base}${withSearchForm(params, false)}`} title={t("header.post.hint")}>{t("header.post")}</Link>
+          <CurrentItem label={t("header.search")} />
         ) : filtered ? (
           <Link to={`${base}${withSearchForm(params, true)}`} title={t("header.search.hint")}>{t("header.search")}</Link>
         ) : (
           <Link to={`${base}?mode=search`} title={interactive ? t("header.searchLogTags.hint") : t("header.searchLog.hint")}>{t("header.search")}</Link>
         )}
         {/* A tag link only filters, so it is left out when tags are not interactive. */}
-        {headerExtraLinks.filter((l) => !l.tag || interactive).map((l) => (
-          <Fragment key={`${l.href}|${l.label}`}>
+        {headerExtraLinks.filter((l) => !l.tag || interactive).map((l, i) => (
+          <Fragment key={`${l.href}|${l.tag ?? ""}|${i}`}>
             &nbsp;|&nbsp;
             {l.tag ? (
-              <Link to={tagPath(l.tag, location.pathname, location.search)}>{l.label}</Link>
+              <Link to={tagPath(l.tag, location.pathname, location.search)}>{localized(l.label)}</Link>
             ) : l.newTab ? (
-              <a href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
+              <a href={l.href} target="_blank" rel="noopener noreferrer">{localized(l.label)}</a>
             ) : (
-              <a href={l.href}>{l.label}</a>
+              <a href={l.href}>{localized(l.label)}</a>
             )}
           </Fragment>
         ))}
         &nbsp;|&nbsp;
-        <Link to="/settings" title={t("header.settings.hint")}>{t("header.settings")}</Link>
+        {onSettings ? (
+          <CurrentItem label={t("header.settings")} />
+        ) : (
+          <Link to="/settings" title={t("header.settings.hint")}>{t("header.settings")}</Link>
+        )}
         {accountLink && (
           <>
             &nbsp;|&nbsp;
@@ -132,5 +198,11 @@ export function Header({ subtitle, tags: given = [], author = "" }: Props) {
         )}
       </span>
     </header>
+    {exposed && (
+      <p className="small selfcheck-banner" role="alert">
+        <Link to="/settings">{t("selfcheck.banner")}</Link>
+      </p>
+    )}
+    </>
   );
 }

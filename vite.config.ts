@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { checkConfig } from "./src/configKeys";
 import { DEFAULT_NETWORK, networkTitle } from "./src/networkTitle";
@@ -44,15 +44,59 @@ function instanceHtml(): Plugin {
   const overrides = (config.messages ?? {}) as Record<string, unknown>;
   const at = typeof overrides["network.at"] === "string" ? overrides["network.at"] : messages["network.at"];
   const network = typeof config.network === "string" ? config.network : DEFAULT_NETWORK;
-  const title = networkTitle(network, strings(config.mainTags) ?? strings(config.defaultTags) ?? [], at);
+  const title = networkTitle(network, strings(config.boardTags) ?? [], at);
   return {
     name: "kuzuha-instance-html",
     transformIndexHtml: (html) => html.replace("%KUZUHA_LANG%", locale).replace("%KUZUHA_TITLE%", title),
   };
 }
 
-export default defineConfig({
-  plugins: [react(), instanceHtml()],
+// public/about.html (the About page) is copied into the build as it is; this
+// writes into the copy what a static page cannot know: this UI's version and
+// repository, the default storage prefix, the build-time instance config
+// (the page merges config.json over it, like the app) and the VITE_* values
+// that win over both. In the dev server the page shows "dev" and reads
+// config.json only.
+function aboutPage(env: Record<string, string>): Plugin {
+  const pkg = JSON.parse(readFileSync(resolve("package.json"), "utf8")) as { version: string; repository: { url: string } };
+  const repoName = new URL(pkg.repository.url).pathname.replace(/\.git$/, "").split("/").filter(Boolean)[1] ?? "kuzuha";
+  const number = (v: string | undefined) => (v === undefined || v.trim() === "" ? undefined : Number(v));
+  let outDir = "dist";
+  return {
+    name: "kuzuha-about-page",
+    apply: "build",
+    configResolved(c) {
+      outDir = resolve(c.root, c.build.outDir);
+    },
+    writeBundle() {
+      const path = resolve(outDir, "about.html");
+      if (!existsSync(path)) return;
+      const data = {
+        uiVersion: pkg.version,
+        uiRepo: pkg.repository.url,
+        storagePrefix: `${repoName}.`,
+        config,
+        env: {
+          apiBaseUrl: env.VITE_API_BASE_URL,
+          theme: {
+            hue: number(env.VITE_THEME_HUE),
+            accentHue: number(env.VITE_THEME_ACCENT_HUE),
+            accentStrength: number(env.VITE_THEME_ACCENT_STRENGTH),
+          },
+        },
+      };
+      // "<" escaped so no value can close the script element.
+      const json = JSON.stringify(data).replace(/</g, "\\u003c");
+      const html = readFileSync(path, "utf8")
+        .replace(/(<script id="kuzuha-build" type="application\/json">)[\s\S]*?(<\/script>)/, (_m, a: string, b: string) => a + json + b)
+        .replace(/(<span class="ui-version">)[^<]*(<\/span>)/g, (_m, a: string, b: string) => a + pkg.version + b);
+      writeFileSync(path, html);
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), instanceHtml(), aboutPage(loadEnv(mode, process.cwd(), "VITE_"))],
   // Relative by default: the built dist/ works from any folder (the router
   // is hash-based, so no server-side fallback is needed). VITE_BASE_PATH
   // pins an absolute prefix instead, e.g. /some/sub/ (must end with /).
@@ -69,4 +113,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

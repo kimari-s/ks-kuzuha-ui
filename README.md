@@ -1,13 +1,15 @@
 # ks-kuzuha-ui
 
-A browser SPA for a kuzuha-style BBS (the あやしいわーるど / Strange World
-board script lineage): a newest-first post list, a box-drawing tree view,
+A browser SPA for a kuzuha-style BBS (the Ayashii World (あやしいわーるど) /
+Strange World board script lineage): a newest-first post list, a box-drawing tree view,
 past-log search and anonymous posting. It is a static bundle that talks to a
 separate JSON API: a client of the [kssw][spec] protocol (the board API
 between a UI and its server), and also of the 6umi.net API it came from.
 
 Demo (in the [ks-kuzuha-alternative][alt] bundle):
 <https://demo.newsupers.net/kuzuha-alternative/?lang=en>
+— an example installation on a free shared host (XREA Free); its ads are
+inserted by the host as a condition of the free plan, not for revenue.
 
 - Vite + React 19 + TypeScript, react-router (hash routing)
 - No server-side rendering, no SPA fallback needed: `dist/` works from any
@@ -97,9 +99,10 @@ KUZUHA_CONFIG=deploy/example.json npm run build
 Every key is optional. Without a file the UI is a single board of all posts,
 English, titled insert-title-here, API on the same origin.
 
-The title is `<network>@<mainTags joined with +>`, e.g. `Strange World@kuzuha`,
-or `network` alone when `mainTags` is empty (every post). The board's name is
-its tag: posts carry it (`defaultTags`), and the listing is made of it. The
+The title is `<network>@<boardTags joined with +>`, e.g. `Strange World@kuzuha`,
+or `network` alone when `boardTags` is empty (every post). The board's name is
+its tag: posts carry it (`postTags`), and the Local listing is made of it
+(`localTags`). The
 `@` part is the message `network.at` (`{network}@{tags}`), so
 `"messages": { "network.at": "{network} / {tags}" }` changes it.
 
@@ -112,19 +115,21 @@ its tag: posts carry it (`defaultTags`), and the listing is made of it. The
 | `apiBaseUrl` | `""` (same origin) | API origin, e.g. `https://api.example.com` |
 | `storagePrefix` | `ks-kuzuha-ui.` | Prefix of every `localStorage` key |
 | `network` | `insert-title-here` | Title before `@`; `""` leaves `@<tags>` |
-| `defaultTags` | `[]` | Tags attached to every post from this UI |
-| `mainTags` | `defaultTags` | Tags that make up the board listing; empty = every post |
-| `excludeTags` | `[]` | Tags hidden from listings by default (e.g. a spam tag) |
+| `boardTags` | `[]` | The board's tags: they name the board, make up the Local listing and go on posts; empty = an unnamed board of every post |
+| `postTags` | `boardTags` | Tags attached to every post from this UI, when they differ from `boardTags` (e.g. a board moving to a new tag keeps `new,old`, posts get `new`) |
+| `localTags` | `boardTags` | The Local listing: posts carrying any of these tags, with their threads. Set it when the listing should take more than the board name says, e.g. the tags bots post under; not in the title, not attached to posts. Empty = no Local |
+| `scope` | `local` | The listing a viewer starts with: `local` (`localTags`) or `global` (every post). Viewers can switch on the settings page. Searches always cover every post |
+| `excludeTags` | `[]` | Tags hidden from listings (Local and Global) by default (e.g. a spam tag) |
 | `tagsMode` | `full` | `full`, `nofilter` (tags shown, not clickable/filterable) or `minimal` (no tag display) |
 | `showTags` | `true` | Initial state of the viewer's "show tags" setting |
 | `theme.hue` / `theme.accentHue` / `theme.accentStrength` | `195` / `15.59` / `0` | Default colours (OKLCH hue; strength 0-1). Viewers can change them on the settings page |
 | `theme.controls` | `standard` | Form controls: `standard` (the browser's look: white text fields) or `custom` (theme colours: text, date and select fields go dark following `theme.hue`, selected text takes the accent). Viewers can switch it on the settings page |
 | `font` | `null` (UDEV Gothic) | The UI font: `{family, mono?, faces?, stylesheets?}`, see [Fonts](#fonts) |
-| `links.header` | `[]` | Header links: `{label, href, newTab?, tag?}` (`tag` filters instead of linking) |
-| `links.related` | `[]` | Link row under the post form, same shape |
+| `links.header` | `[]` | Header links: `{label, href, newTab?, tag?}` (`tag` filters instead of linking). `label` is a string or a map by locale ([Custom pages](#custom-pages)) |
+| `links.related` | the About page | Link row under the post form, same shape. A list replaces the default `[{"label": {"en": "About", "ja": "広報室"}, "href": "about.html"}]`; `[]` removes the row ([Custom pages](#custom-pages)) |
 | `links.account` | `null` | Account icon: `{href, authHintKey?}` |
-| `repoUrl` | `package.json` `repository` | Source link in the footer (e.g. the repo of a distribution bundling this UI) |
-| `release` | `null` | The product this UI ships in: `{name, version, url}`. When set, the footer reads `name vVERSION` linking to `url` (e.g. `kimari-s/ks-kuzuha-alternative v0.1.0`) instead of the source link and the UI's version. The settings page always shows the UI's own version and the API's `/v1/meta` |
+| `repoUrl` | `package.json` `repository` | Source link in the footer (e.g. the repo of a distribution bundling this UI). The footer shows the repository name without the owner: `ks-kuzuha-ui v0.5.0-alpha.1` |
+| `release` | `null` | The product this UI ships in: `{name, version, url}`. When set, the footer reads `name vVERSION` linking to `url` (e.g. `ks-kuzuha-alternative v0.1.0-alpha.1`) instead of the source link and the UI's version. The About page shows it next to the UI's own version and the API's `/v1/meta` |
 
 Unknown keys and values of the wrong type draw a build warning; keys starting
 with `$` (comments) or `x-` (left for forks) are ignored.
@@ -138,11 +143,18 @@ render and deep-merges it over the build-time config:
 
 - objects (`theme`, `font`, `links`, `messages`, `release`) merge key by key; strings,
   numbers, booleans, arrays and `null` replace the build-time value;
-- no file (404 or any error status), a network error or a 5 s timeout: the
-  build-time config is used as is, silently;
-- invalid JSON or not an object: ignored, with a console warning;
-- a key whose value has the wrong type (e.g. a string for `defaultTags`) is
-  dropped with a console warning; unknown keys are warned about.
+- no file (404 or any error status, or an HTML page that a host serves
+  for any missing path), a network error or a 5 s timeout: the build-time
+  config is used as is, silently (the UI writes nothing to the console;
+  the browser's developer tools may still list the 404 request);
+- invalid JSON or not an object: ignored;
+- a key whose value has the wrong type (e.g. a string for `boardTags`) is
+  dropped; unknown keys are ignored.
+
+Each of the last two is shown on the settings page (which file, and the
+parse error with its line and column where the browser gives a position,
+or the key and the type it should have), and warned in the console; the
+board keeps running.
 
 ```json
 {
@@ -152,7 +164,9 @@ render and deep-merges it over the build-time config:
 ```
 
 This lets one build serve any operator: a host with only FTP edits
-`config.json`. Keep the file out of the overwrite when upgrading the UI.
+`config.json`. The build ships no `config.json`, so uploading a new build
+over the old one keeps it. A distribution can ship a `config.example.json`
+for the operator to copy (ks-kuzuha-alternative does).
 A build-time `VITE_*` env var still wins over both files. `storagePrefix`
 works at runtime too, but changing it on a live board orphans the
 viewers' stored settings and client ids.
@@ -232,6 +246,85 @@ the list falls back to it. Check the licence of any font you ship. Keep the
 bundled font's files and `LICENSE-UDEVGothic.txt` as they are (the OFL
 reserves the name "UDEV Gothic" for the unmodified font).
 
+### Custom pages
+
+The build ships one page of its own next to `index.html`: **`about.html`**,
+the About page (「広報室」 in the Japanese UI). It is plain HTML and CSS
+with a small inline script, outside the app (no router, no build step to
+edit it). One line says what this is (a kuzuha-style board); then what
+is running, each row linked to its source: the `release` (name and
+version, linked to `release.url`), this UI's version (its repository), and
+the API's `GET /v1/meta`: `impl impl_version`, linked to `impl_url` when
+the server gives one, then `protocol`, `version`, `profile`, `impl`,
+`impl_version`, `features`. It carries nothing the board needs: operator
+notices are on the settings page ([Settings page notices](#settings-page-notices)).
+
+- The script reads `config.json` from the same folder (merged over the
+  build-time config, as the app does), calls `<apiBaseUrl>/v1/meta` and
+  fills in the values. Without JavaScript the page still reads, in both
+  languages.
+- Language: as the app ([Language](#language)): `?lang=`, the viewer's
+  saved choice (the same `localStorage` key, so `storagePrefix` counts), the
+  browser's languages unless `localeAuto` is `false`, `locale`, then `en`.
+  It holds an English and a Japanese text and shows the chosen one.
+- Look: the board's font (`font`) and colours (`theme`, and the viewer's
+  own from the settings page).
+- The build writes the UI's version and the build-time config into the
+  copy in `dist/` (`vite.config.ts`, `aboutPage()`).
+
+The link row under the post form (`links.related`) links to it by default.
+The settings page does not link to it (it shows only the viewer's settings and the operator notices). A link `label` is a string, or a map by
+locale: the UI's language, else `en`, else the first entry:
+
+```json
+{ "label": { "en": "About", "ja": "広報室" }, "href": "about.html" }
+```
+
+To add a page of your own, write e.g. `rules.html`, put it next to
+`index.html`, and list it in `config.json`. A `links.related` list replaces
+the default one, so keep the About entry to keep its link:
+
+```json
+{
+  "links": {
+    "related": [
+      { "label": { "en": "About", "ja": "広報室" }, "href": "about.html" },
+      { "label": { "en": "Rules", "ja": "ルール" }, "href": "rules.html" },
+      { "label": "uploader", "href": "https://up.example.com/", "newTab": true }
+    ]
+  }
+}
+```
+
+`"related": []` removes the row. Upgrading the UI replaces `about.html`:
+put your own text in a page with another name, or copy `about.html` under
+another name, edit it and point the link at the copy.
+
+### Settings page notices
+
+The settings page (`#/settings`) carries notices for the operator, above
+the viewer's settings; nothing shows when all is well. They are not on the
+About page, which is optional.
+
+- **config.json problems** (above).
+- **Security self-check.** When the API is ks-sw-api (`/v1/meta`
+  `protocol` `kssw`, `impl` `php`) on this page's origin, the page asks
+  for the files that its `.htaccess` keeps private: `config.php`,
+  `.htaccess`, `lib/app.php`, `lib/schema.sql`, `data/` and the default
+  database `data/kssw.sqlite3` under the API base (`PRIVATE_PATHS` in
+  `src/selfCheck.ts`, the one list). One that answers with content (206 to
+  a one-byte range request, or 200 with a non-blank body) is listed in a
+  warning: `.htaccess` was probably not uploaded (FTP programs often hide
+  dotfiles) or is not in effect, and the database may be downloadable.
+  403 / 404 and an empty 200 (PHP running `config.php` prints nothing) are
+  fine. A random path is probed first: a host that answers anything with a
+  page gives no verdict, and nothing is shown. Each request reads at most
+  64 KiB. Another implementation, or an API on another origin
+  (whose private files the browser cannot read without CORS), is not
+  checked. The result is kept for the browser session: the other pages
+  then show a one-line reminder under the header, linking to the settings
+  page. The board itself never runs the probes.
+
 ### Build env vars
 
 An env var wins over the config file.
@@ -242,16 +335,23 @@ An env var wins over the config file.
 | `VITE_BASE_PATH` | Absolute asset prefix (e.g. `/bbs/`, must end with `/`). Default `./` (relative) |
 | `VITE_READ_ONLY` | `"true"` hides the post and reply forms |
 | `VITE_API_BASE_URL` | `apiBaseUrl` |
-| `VITE_DEFAULT_TAGS`, `VITE_MAIN_TAGS`, `VITE_DEFAULT_EXCLUDE_TAGS` | Board settings; tag lists comma-separated (`VITE_DEFAULT_TAG` is a legacy alias) |
+| `VITE_BOARD_TAGS`, `VITE_POST_TAGS`, `VITE_LOCAL_TAGS`, `VITE_EXCLUDE_TAGS`, `VITE_SCOPE` | `boardTags`, `postTags`, `localTags`, `excludeTags`, `scope`; tag lists comma-separated |
 | `VITE_THEME_HUE`, `VITE_THEME_ACCENT_HUE`, `VITE_THEME_ACCENT_STRENGTH`, `VITE_THEME_CONTROLS` | `theme.*` |
 | `VITE_TAGS_MODE`, `VITE_SHOW_TAGS` | `tagsMode`, `showTags` |
 
 ## Routes
 
 Hash routes: `#/` (standard view), `#/tree` (tree view), `#/tree/:root`
-(one thread), `#/post/:id` (post detail and reply), `#/settings`. Legacy `?tag=` / `?post=` query links
+(one thread), `#/post/:id` (post detail and reply), `#/settings`, and the
+static `about.html` next to `index.html` ([Custom pages](#custom-pages)). Legacy `?tag=` / `?post=` query links
 are rewritten to hash routes on load; `?lang=` picks the language
 ([Language](#language)).
+
+Header: `View` (a drop-down like the ■ post menu) switches between the
+standard and the tree view, keeping the current search or filter; the
+view being shown is greyed out in it. `Search` and `Settings` follow; the
+one being shown is marked (accent, underlined, `aria-current`) and leads
+back like `« Back`. No item has an access key.
 
 ## Security
 
@@ -263,3 +363,9 @@ The code is MIT (`LICENSE`). The bundled UDEV Gothic fonts
 (`public/fonts/*.ttf`, © Yuko OTAWARA) are under the SIL Open Font License
 1.1; see `public/fonts/LICENSE-UDEVGothic.txt`, which is copied into every
 build next to the fonts. To use another font, see [Fonts](#fonts).
+
+The icon (`public/favicon.svg`, `favicon-32.png`, `apple-touch-icon.png`) is
+"auto_awesome" from Google's [Material Symbols](https://github.com/google/material-design-icons),
+under the Apache License 2.0 (`public/LICENSE-MaterialSymbols.txt`, copied
+into every build), drawn on a blackboard background. Replace these files to
+use your own icon.

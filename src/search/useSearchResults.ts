@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Post } from "../types";
 import { getPostCount, listPosts, searchPosts, searchPostsCount } from "../api";
-import { MAIN_TAGS } from "../settings";
+import { listingTags } from "../scope";
 import { loadPostContext, type PostContext } from "../hooks/usePosts";
 import { hasConditions, onlyExclude, toApi, type SearchState } from "./state";
 
@@ -31,7 +31,7 @@ export function useSearchResults(s: SearchState, page: number, key: string) {
       try {
         const api = toApi(s);
         const exclude = s.excludeTags.length ? s.excludeTags : undefined;
-        const board = { tags: MAIN_TAGS, include_tree: true, exclude_tags: exclude, exclude_op: s.excludeOp };
+        const board = { tags: listingTags(), include_tree: true, exclude_tags: exclude, exclude_op: s.excludeOp };
         const [list, n] = onlyExclude(s)
           ? await Promise.all([listPosts({ ...board, page, page_size: SEARCH_PAGE_SIZE }), getPostCount(board)])
           : await Promise.all([searchPosts(api, page, SEARCH_PAGE_SIZE), searchPostsCount(api)]);

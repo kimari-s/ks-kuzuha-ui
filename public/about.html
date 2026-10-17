@@ -1,0 +1,379 @@
+<!doctype html>
+<!--
+  The board's About page (ks-kuzuha-ui). A plain static page next to
+  index.html, outside the app: no build step needed to edit it, and it reads
+  fine without JavaScript (both languages are shown then).
+
+  The small script at the end reads config.json (the same folder), picks the
+  language the way the board does (?lang=, the viewer's saved choice, the
+  browser's languages unless "localeAuto" is false, "locale", then English),
+  applies the viewer's colours and the configured font, and fills in what is
+  running, each linked to its source: the release (config "release",
+  linked to release.url), this UI's version (its repository) and the API's
+  GET /v1/meta (at config "apiBaseUrl"): "impl impl_version", linked to
+  impl_url when the server gives one, then the details.
+
+  The build writes this UI's version and the build-time config into the
+  marked spots below (vite.config.ts, aboutPage()). An upgrade replaces this
+  file: put text of your own in a page with another name (README "Custom
+  pages").
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+@font-face {
+  font-family: "UDEV Gothic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/UDEVGothic-Regular.ttf?v=hs-jpdoc") format("truetype");
+}
+@font-face {
+  font-family: "UDEV Gothic";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/UDEVGothic-Bold.ttf?v=hs-jpdoc") format("truetype");
+}
+/* The board's palette (src/styles.css): one OKLCH hue for the background,
+   the accent mixed from the text white. The script sets the viewer's values. */
+:root {
+  --hue: 195;
+  --accent-hue: 15.59;
+  --accent-strength: 0;
+  --bg: oklch(33.64% 0.0574 var(--hue));
+  --bg-darker: oklch(22.05% 0.0376 var(--hue));
+  --fg: #f0f0f0;
+  --link: oklch(84.46% 0.0384 var(--hue));
+  --sep: oklch(74.15% 0.0638 var(--hue));
+  --border: rgba(240, 240, 240, 0.5);
+  --accent: color-mix(in oklch, #f0f0f0, oklch(0.669 0.2213 var(--accent-hue)) calc(var(--accent-strength) * 100%));
+  --font-ui: "UDEV Gothic", monospace;
+}
+@supports not (color: oklch(0% 0 0)) {
+  :root { --bg: #004040; --bg-darker: #002020; --link: #b0d4d4; --sep: #7ab8b8; }
+}
+@supports not (color: color-mix(in oklch, oklch(0% 0 0), #fff 50%)) {
+  :root { --accent: #f0f0f0; }
+}
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 6px 16px 24px;
+}
+main { max-width: 46em; }
+a:link, a:visited { color: var(--link); text-decoration: none; }
+a:hover, a:active { color: var(--accent); }
+hr { border: 0; height: 1px; background: var(--border); margin: 4px 0; }
+.small { font-size: 0.8rem; color: var(--sep); }
+.back-link { margin: 0.4em 0; }
+h1 { font-size: 1.15rem; font-weight: 600; margin: 0.6em 0 0.4em; }
+h2 { font-size: 1em; font-weight: bold; margin: 1.6em 0 0.4em; }
+ul { padding-left: 1.4em; margin: 0.4em 0; }
+li { margin: 0.2em 0; }
+/* Without JavaScript both languages show, one after the other. */
+section + section { border-top: 1px solid var(--border); margin-top: 1.5em; }
+html.js section + section { border-top: 0; margin-top: 0; }
+dl.running {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.2em 1.2em;
+  margin: 0.4em 0;
+}
+dl.running dt { color: var(--sep); }
+dl.running dd { margin: 0; overflow-wrap: anywhere; }
+dl.api { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0 0.8em; margin: 0; }
+dl.api dt { color: var(--sep); }
+dl.api dd { margin: 0; overflow-wrap: anywhere; }
+.note { font-size: 0.85rem; color: var(--sep); }
+@media (max-width: 30em) {
+  dl.running { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  dl.running dd { margin: 0 0 0.6em; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<section lang="en" data-lang="en">
+  <div class="small back-link"><a href="./">« Back</a></div>
+  <hr>
+  <h1>About</h1>
+  <p>A kuzuha-style message board.</p>
+  <h2>What is running</h2>
+  <dl class="running">
+    <dt data-row="release">Release</dt>
+    <dd data-row="release" data-k="release">—</dd>
+    <dt>UI</dt>
+    <dd><a href="https://github.com/kimari-s/ks-kuzuha-ui" data-k="ui-repo">ks-kuzuha-ui</a> v<span class="ui-version">dev</span></dd>
+    <dt>API</dt>
+    <dd data-k="api" data-loading="checking…" data-unknown="no /v1/meta">—</dd>
+  </dl>
+  <noscript><p class="note">The release and the API's details are filled in by a small script: turn on JavaScript to see them.</p></noscript>
+</section>
+
+<section lang="ja" data-lang="ja">
+  <div class="small back-link"><a href="./">« 戻る</a></div>
+  <hr>
+  <h1>広報室</h1>
+  <p>くずは風の掲示板です。</p>
+  <h2>動いているもの</h2>
+  <dl class="running">
+    <dt data-row="release">配布物</dt>
+    <dd data-row="release" data-k="release">—</dd>
+    <dt>画面</dt>
+    <dd><a href="https://github.com/kimari-s/ks-kuzuha-ui" data-k="ui-repo">ks-kuzuha-ui</a> v<span class="ui-version">dev</span></dd>
+    <dt>API</dt>
+    <dd data-k="api" data-loading="確認中…" data-unknown="/v1/meta なし">—</dd>
+  </dl>
+  <noscript><p class="note">配布物と API の詳細は小さな script で表示します。見るには JavaScript を有効にしてください。</p></noscript>
+</section>
+
+</main>
+<!-- Written by the build (vite.config.ts): {"uiVersion", "uiRepo",
+     "storagePrefix", "config" (build-time instance config), "env"}. -->
+<script id="kuzuha-build" type="application/json">{}</script>
+<script>
+(function () {
+  "use strict";
+  var AVAILABLE = ["en", "ja"];
+  var TITLES = { en: "About", ja: "広報室" };
+  var AT = { en: "{network}@{tags}", ja: "{network}＠{tags}" };
+  var root = document.documentElement;
+
+  function isObj(v) { return v !== null && typeof v === "object" && !Array.isArray(v); }
+  function str(v) { return typeof v === "string" && v.trim() !== "" ? v : null; }
+
+  var build = {};
+  try { build = JSON.parse(document.getElementById("kuzuha-build").textContent || "{}"); } catch (e) { build = {}; }
+  if (!isObj(build)) build = {};
+  var env = isObj(build.env) ? build.env : {};
+
+  // Like the board (src/instance.ts): objects merge key by key, anything
+  // else replaces; "$..." keys are comments.
+  function merge(base, over) {
+    Object.keys(over).forEach(function (k) {
+      if (k.charAt(0) === "$") return;
+      var v = over[k];
+      if (isObj(v) && isObj(base[k])) merge(base[k], v);
+      else base[k] = isObj(v) ? merge({}, v) : v;
+    });
+    return base;
+  }
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* not remembered */ } }
+  };
+
+  // src/localePick.ts
+  function match(tag) {
+    var t = String(tag || "").trim().toLowerCase().replace(/_/g, "-");
+    if (!t) return null;
+    if (AVAILABLE.indexOf(t) >= 0) return t;
+    var p = t.split("-")[0];
+    return AVAILABLE.indexOf(p) >= 0 ? p : null;
+  }
+
+  function pickLocale(cfg, prefix) {
+    var sw = cfg.localeSwitch !== false;
+    var key = prefix + "locale";
+    var q = match(new URLSearchParams(window.location.search).get("lang"));
+    if (q && sw) store.set(key, q);
+    if (q) return q;
+    var saved = sw ? match(store.get(key)) : null;
+    if (saved) return saved;
+    if (cfg.localeAuto !== false) {
+      var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+      for (var i = 0; i < langs.length; i++) {
+        var m = match(langs[i]);
+        if (m) return m;
+      }
+    }
+    return match(cfg.locale) || "en";
+  }
+
+  function num(v) {
+    if (v === null || v === undefined || (typeof v === "string" && v.trim() === "")) return null;
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
+  function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+
+  // src/theme.ts: the viewer's choice, else the board's default.
+  function applyTheme(cfg, prefix) {
+    var th = isObj(cfg.theme) ? cfg.theme : {};
+    var et = isObj(env.theme) ? env.theme : {};
+    function pick(name, cfgVal, envVal, dflt) {
+      var s = num(store.get(prefix + name));
+      if (s !== null) return s;
+      var e = num(envVal);
+      if (e !== null) return e;
+      var c = num(cfgVal);
+      return c !== null ? c : dflt;
+    }
+    root.style.setProperty("--hue", String(clamp(pick("theme_hue", th.hue, et.hue, 195), 0, 360)));
+    root.style.setProperty("--accent-hue", String(clamp(pick("theme_accent_hue", th.accentHue, et.accentHue, 15.59), 0, 360)));
+    root.style.setProperty("--accent-strength", String(clamp(pick("theme_accent_strength", th.accentStrength, et.accentStrength, 0), 0, 1)));
+  }
+
+  // src/font.ts (a relative URL is relative to this page's folder).
+  function applyFont(font) {
+    if (!isObj(font)) return;
+    (Array.isArray(font.faces) ? font.faces : []).forEach(function (f) {
+      if (!isObj(f) || !str(f.family) || !str(f.src) || typeof FontFace !== "function" || !document.fonts) return;
+      var src = "url(" + JSON.stringify(new URL(f.src, document.baseURI).href) + ")" + (str(f.format) ? " format(" + JSON.stringify(f.format) + ")" : "");
+      try {
+        document.fonts.add(new FontFace(f.family, src, {
+          weight: f.weight === undefined ? "normal" : String(f.weight),
+          style: str(f.style) || "normal",
+          display: "swap"
+        }));
+      } catch (e) { /* ignored, as on the board */ }
+    });
+    (Array.isArray(font.stylesheets) ? font.stylesheets : []).forEach(function (href) {
+      if (!str(href)) return;
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = new URL(href, document.baseURI).href;
+      document.head.appendChild(link);
+    });
+    if (str(font.family)) root.style.setProperty("--font-ui", font.family);
+  }
+
+  function boardTitle(cfg, lang) {
+    var network = typeof cfg.network === "string" ? cfg.network : "insert-title-here";
+    var tags = Array.isArray(cfg.boardTags) ? cfg.boardTags : [];
+    tags = tags.filter(function (t) { return typeof t === "string"; });
+    if (tags.length === 0) return network;
+    var msgs = isObj(cfg.messages) ? cfg.messages : {};
+    var at = typeof msgs["network.at"] === "string" ? msgs["network.at"] : AT[lang];
+    return at.replace("{network}", network).replace("{tags}", tags.join("+"));
+  }
+
+  function each(sel, fn) { Array.prototype.forEach.call(document.querySelectorAll(sel), fn); }
+
+  function showRelease(rel) {
+    var name = isObj(rel) ? str(rel.name) : null;
+    var version = isObj(rel) ? str(rel.version) : null;
+    if (!name && !version) {
+      each('[data-row="release"]', function (el) { el.hidden = true; });
+      return;
+    }
+    var text = [name, version && "v" + version].filter(Boolean).join(" ");
+    each('[data-k="release"]', function (dd) {
+      dd.textContent = "";
+      if (httpUrl(rel.url)) {
+        var a = document.createElement("a");
+        a.href = httpUrl(rel.url);
+        a.textContent = text;
+        dd.appendChild(a);
+      } else {
+        dd.textContent = text;
+      }
+    });
+  }
+
+  // An absolute http(s) URL, else null (impl_url, release.url).
+  function httpUrl(v) {
+    if (!str(v)) return null;
+    try {
+      var u = new URL(v);
+      return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+    } catch (e) { return null; }
+  }
+
+  // "impl impl_version" (linked to impl_url when given), then the details:
+  // kssw protocol, version, profile, impl, impl_version, features; older
+  // servers profile, contract, impl, version.
+  function showMeta(m) {
+    each('[data-k="api"]', function (dd) {
+      dd.textContent = "";
+      if (m === undefined) { dd.textContent = dd.getAttribute("data-loading"); return; }
+      var name = m ? [str(m.impl), str(m.impl_version)].filter(Boolean).join(" ") : "";
+      if (name) {
+        var head = document.createElement("div");
+        head.setAttribute("data-k", "api-name");
+        var url = httpUrl(m.impl_url);
+        if (url) {
+          var a = document.createElement("a");
+          a.href = url;
+          a.textContent = name;
+          head.appendChild(a);
+        } else {
+          head.textContent = name;
+        }
+        dd.appendChild(head);
+      }
+      var keys = !m ? [] : m.protocol !== undefined
+        ? ["protocol", "version", "profile", "impl", "impl_version"]
+        : ["profile", "contract", "impl", "version"];
+      var rows = [];
+      keys.forEach(function (k) {
+        if (typeof m[k] === "string" || typeof m[k] === "number") rows.push([k, String(m[k])]);
+      });
+      if (m && Array.isArray(m.features)) rows.push(["features", m.features.length ? m.features.join(", ") : "-"]);
+      if (rows.length === 0) { dd.textContent = dd.getAttribute("data-unknown"); return; }
+      var dl = document.createElement("dl");
+      dl.className = "api";
+      rows.forEach(function (r) {
+        var dt = document.createElement("dt");
+        dt.textContent = r[0];
+        var v = document.createElement("dd");
+        v.setAttribute("data-meta", r[0]);
+        v.textContent = r[1];
+        dl.appendChild(dt);
+        dl.appendChild(v);
+      });
+      dd.appendChild(dl);
+    });
+  }
+
+  function run(cfg) {
+    var prefix = typeof cfg.storagePrefix === "string" ? cfg.storagePrefix : (str(build.storagePrefix) || "ks-kuzuha-ui.");
+    var lang = pickLocale(cfg, prefix);
+    root.lang = lang;
+    root.classList.add("js");
+    each("section[data-lang]", function (s) { s.hidden = s.getAttribute("data-lang") !== lang; });
+    var board = boardTitle(cfg, lang);
+    document.title = TITLES[lang] + (board ? " - " + board : "");
+    applyTheme(cfg, prefix);
+    applyFont(cfg.font);
+    if (str(build.uiRepo)) each('[data-k="ui-repo"]', function (a) { a.href = build.uiRepo; });
+    showRelease(cfg.release);
+    showMeta(undefined);
+    var base = typeof env.apiBaseUrl === "string" ? env.apiBaseUrl : typeof cfg.apiBaseUrl === "string" ? cfg.apiBaseUrl : "";
+    fetch(base + "/v1/meta", { credentials: "include" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (m) { showMeta(isObj(m) ? m : null); }, function () { showMeta(null); });
+  }
+
+  var cfg = merge({}, isObj(build.config) ? build.config : {});
+  // config.json next to this page, as the board reads it (5 s at most).
+  var ctl = typeof AbortController === "function" ? new AbortController() : null;
+  var timer = ctl ? setTimeout(function () { ctl.abort(); }, 5000) : 0;
+  fetch("config.json", { cache: "no-cache", signal: ctl ? ctl.signal : undefined })
+    .then(function (r) { return r.ok ? r.text() : null; })
+    .then(function (body) {
+      if (body === null) return;
+      try {
+        var c = JSON.parse(body);
+        if (isObj(c)) merge(cfg, c);
+      } catch (e) { /* not JSON: ignored, as on the board */ }
+    }, function () { /* no config.json */ })
+    .then(function () { clearTimeout(timer); run(cfg); });
+})();
+</script>
+</body>
+</html>

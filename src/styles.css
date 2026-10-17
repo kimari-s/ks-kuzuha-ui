@@ -113,6 +113,8 @@ main > hr { margin: 0.5em 0; }
   text-decoration: none;
 }
 .pagetitle a:hover, .pagetitle a:active { color: var(--fg); } /* the board name does not react to hover */
+/* Narrowed to tags: the tags lead as the heading, the board name follows smaller. */
+.pagetitle.tagged .board-name { font-size: 0.8em; font-weight: 400; }
 
 /* Top / bottom link rows — separator hex sits darker + slightly more saturated
    than the link cyan, so the row reads as one nav family. Anchors
@@ -214,7 +216,7 @@ input[type="button"]:disabled:hover, input[type="submit"]:disabled:hover, input[
 }
 
 /* Theme-coloured controls (<html data-controls="custom">, set by theme.ts;
-   the settings page's 「入力欄・選択範囲」 option). Text fields, date fields and selects
+   the settings page's "Inputs & selection" option). Text fields, date fields and selects
    go dark like Streamlit inputs under secondaryBackgroundColor #002828 (=
    oklch(25.07% 0.0428 194.8)), following --hue, and selected text takes the
    accent like a pressed button. "standard" leaves the browser's look.
@@ -331,8 +333,18 @@ pre.msgnormal {
 /* section heading: a full-width row of the grid */
 .settings-form .settings-section { grid-column: 1 / -1; margin: 0; font-size: 1em; font-weight: bold; }
 .settings-form input[type="checkbox"] { vertical-align: middle; margin: 0 0.3em 0 0; }
-/* About block under the settings form: versions, in the muted footer colour */
-.settings-form.about { margin-top: 1.5em; color: var(--subtle-fg); }
+/* operator notices above the settings form (SettingsNotices.tsx): a broken
+   config.json, private files reachable; .warn is the prominent one */
+.settings-notice { border: 1px solid var(--border); padding: 0.4em 0.8em; margin: 0.6em 0 1em; max-width: 46em; }
+.settings-notice.warn { border: 2px solid var(--error); }
+.settings-notice .notice-title { font-weight: bold; margin: 0.2em 0; }
+.settings-notice.warn .notice-title { color: var(--error); }
+.settings-notice p, .settings-notice ul { margin: 0.4em 0; }
+.settings-notice ul { padding-left: 1.4em; }
+.settings-notice code { font-family: var(--font-mono); overflow-wrap: anywhere; }
+/* the board's one-line reminder of that warning, under the header */
+.selfcheck-banner { margin: 0.3em 0; }
+.selfcheck-banner a:link, .selfcheck-banner a:visited { color: var(--error); }
 
 .bbsstats {
   font-size: 0.78rem;
@@ -503,7 +515,20 @@ pre.msgtree .post-menu-items a, pre.msgtree .post-menu-items a:link, pre.msgtree
   outline: none;
 }
 .post-menu-items .menu-off { display: block; padding: 2px 10px; color: var(--menu-off); cursor: default; }
+/* The header's "View" (Header ViewMenu): the ■ menu's box and items; the
+   summary reads like the other header links. */
+.view-menu-summary { color: var(--link); }
+.view-menu-summary:hover, .view-menu[open] > .view-menu-summary { color: var(--accent); }
+.view-menu-summary:focus-visible { outline: 1px solid var(--link); outline-offset: 1px; }
 .back-link { margin: 0.4em 0; }
+/* The header item of the view being shown: accent colour plus an underline,
+   so it does not rely on colour alone (the default accent is the text white).
+   It is a link back, like "« Back" (Header CurrentItem). */
+.link_upper .current-link:link, .link_upper .current-link:visited {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .inline-reply { margin: 0.3em 0 0.6em; }
 
 /* Tags in the heading — title size, link colour; clicking narrows to that tag alone */

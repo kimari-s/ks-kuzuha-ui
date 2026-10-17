@@ -1,8 +1,18 @@
 import type { Post } from "./types";
 import { API_BASE } from "./env";
 import { getClientId } from "./client";
-import { DEFAULT_TAGS } from "./settings";
+import { POST_TAGS } from "./settings";
 import { hasFeature, isKssw, markAbsent } from "./features";
+import { t } from "./i18n";
+
+// A deleted post as the UI shows it: the "flushed" line in the viewer's
+// language, no tags, no poster. kssw servers send deleted posts with an
+// empty text; the 6umi.net API sends its own Japanese line. Either way the
+// UI shows its own, so every view (list, tree, quoted parents) agrees.
+function shown(post: Post): Post {
+  if (post.status === "active") return post;
+  return { ...post, text: t("post.deleted"), tags: [], author: null, meta: post.meta && { ...post.meta, author: undefined } };
+}
 
 // All browser fetches go to the API's bare /v1 path. No API key embedded.
 // When a __session cookie is present (set by the host site), the API attaches
@@ -163,7 +173,7 @@ export async function listPosts(
   const url = `${PUBLIC}/posts${qs ? `?${qs}` : ""}`;
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error(`listPosts failed: ${res.status}`);
-  return res.json();
+  return ((await res.json()) as Post[]).map(shown);
 }
 
 export type SearchParams = {
@@ -200,7 +210,7 @@ function searchQuery(params: SearchParams, page?: number, pageSize?: number): st
 export async function searchPosts(params: SearchParams, page = 1, pageSize = 20): Promise<Post[]> {
   const res = await fetch(`${PUBLIC}/posts/search?${searchQuery(params, page, pageSize)}`, { credentials: "include" });
   if (!res.ok) throw new Error(`searchPosts failed: ${res.status}`);
-  return res.json();
+  return ((await res.json()) as Post[]).map(shown);
 }
 
 export async function searchPostsCount(params: SearchParams): Promise<number> {
@@ -213,7 +223,7 @@ export async function getPost(id: string): Promise<Post | null> {
   const res = await fetch(`${PUBLIC}/posts/${id}`, { credentials: "include" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`getPost(${id}) failed: ${res.status}`);
-  return res.json();
+  return shown((await res.json()) as Post);
 }
 
 // Bulk PK lookup. Replaces N parallel getPost calls. Server cap is 100;
@@ -225,7 +235,7 @@ export async function getPostsByIds(ids: string[]): Promise<Post[]> {
   for (const id of ids) q.append("ids", id);
   const res = await fetch(`${PUBLIC}/posts/by-ids?${q.toString()}`, { credentials: "include" });
   if (!res.ok) throw new Error(`getPostsByIds failed: ${res.status}`);
-  return res.json();
+  return ((await res.json()) as Post[]).map(shown);
 }
 
 // Whether this browser wrote the post. Sends the browser's client id, which
@@ -299,7 +309,7 @@ export async function postReply(parentId: string, text: string, author: string, 
   if (!trimmed) return;
   await createPost({
     text: trimmed,
-    tags: [...new Set([...DEFAULT_TAGS, ...extraTags])],
+    tags: [...new Set([...POST_TAGS, ...extraTags])],
     author: author.trim() || undefined,
     parent_id: parentId,
     client_id: getClientId(),

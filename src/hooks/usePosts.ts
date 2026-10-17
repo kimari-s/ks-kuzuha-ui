@@ -12,15 +12,16 @@ import {
   listPosts,
 } from "../api";
 import { getClientId } from "../client";
-import { DEFAULT_EXCLUDE_TAGS, DEFAULT_TAGS, MAIN_TAGS } from "../settings";
+import { EXCLUDE_TAGS, POST_TAGS } from "../settings";
+import { listingTags } from "../scope";
 import { rotateHighlight } from "./useNewHighlight";
 import { extractUrls } from "../url-tokenize";
 
 export const PAGE_SIZE = 30;
 
-// The board listing: main-tag posts with their threads, newest first.
+// The board listing: Local or Global (scope.ts) with their threads, newest first.
 function listBoard(page: number): Promise<Post[]> {
-  return listPosts({ tags: MAIN_TAGS, include_tree: true, exclude_tags: DEFAULT_EXCLUDE_TAGS, page, page_size: PAGE_SIZE });
+  return listPosts({ tags: listingTags(), include_tree: true, exclude_tags: EXCLUDE_TAGS, page, page_size: PAGE_SIZE });
 }
 
 async function fetchSummaries(posts: Post[], ancestors: Map<string, Post>): Promise<Map<string, UrlSummary>> {
@@ -218,7 +219,7 @@ export function usePosts() {
       try {
         await createPost({
           text: trimmedText,
-          tags: DEFAULT_TAGS,
+          tags: POST_TAGS,
           author: tagInput.trim() || undefined,
           client_id: getClientId(),
         });

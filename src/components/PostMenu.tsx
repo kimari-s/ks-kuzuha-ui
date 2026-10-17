@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useMenuClose } from "../hooks/useMenuClose";
 import { t } from "../i18n";
 import { Link, useLocation } from "react-router-dom";
 import { deleteMyPost, isMyPost } from "../api";
@@ -17,7 +18,8 @@ type Props = {
 };
 
 // The ■ at the head of a post opens this menu: Reply / Single view / Tree view /
-// Delete. A plain <details> disclosure; a click outside closes it. Whether Delete
+// Delete. A plain <details> disclosure; a click outside or Escape closes it
+// (useMenuClose, shared with the header's View menu). Whether Delete
 // shows is asked only when the menu opens, so listing needs no extra request.
 export function PostMenu({ postId, rootId, deleted, onReply, onDeleted, current }: Props) {
   const location = useLocation();
@@ -25,14 +27,7 @@ export function PostMenu({ postId, rootId, deleted, onReply, onDeleted, current 
   const [open, setOpen] = useState(false);
   const [mine, setMine] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (box.current && !box.current.contains(e.target as Node)) box.current.removeAttribute("open");
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
+  useMenuClose(box, open);
 
   function toggle(e: React.SyntheticEvent<HTMLDetailsElement>) {
     const isOpen = e.currentTarget.open;

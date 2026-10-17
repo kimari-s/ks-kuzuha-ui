@@ -31,33 +31,45 @@ function num(value: string | undefined, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-// Tags attached to every post made from this UI (kuzuha parity).
-// More than one when a board moves to a new tag and keeps the old one
-// alongside for a while (e.g. "main,old"). Empty: posts carry no board tag.
-// config: defaultTags. env: VITE_DEFAULT_TAGS (comma-separated;
-// VITE_DEFAULT_TAG is read when it is unset)
-export const DEFAULT_TAGS: string[] = list(env.VITE_DEFAULT_TAGS ?? env.VITE_DEFAULT_TAG, INSTANCE.defaultTags ?? []);
+// The board's tags. They name the board (TITLE), make up its Local
+// listing unless LOCAL_TAGS says otherwise, and, unless POST_TAGS says
+// otherwise, go on every post. Empty: an unnamed board of every post.
+// config: boardTags. env: VITE_BOARD_TAGS (comma-separated)
+export const BOARD_TAGS: string[] = list(env.VITE_BOARD_TAGS, INSTANCE.boardTags ?? []);
 
-// The board's listing: posts carrying any of these tags, with their whole
-// threads (so untagged replies, e.g. bot replies, show up in context).
-// Empty: every post.
-// config: mainTags. env: VITE_MAIN_TAGS (comma-separated)
-export const MAIN_TAGS: string[] = list(env.VITE_MAIN_TAGS, INSTANCE.mainTags ?? DEFAULT_TAGS);
+// Tags attached to every post made from this UI. Differs from BOARD_TAGS
+// e.g. while a board moves to a new tag: the board keeps "new,old", posts
+// get "new". Empty: posts carry no board tag.
+// config: postTags. env: VITE_POST_TAGS (comma-separated)
+export const POST_TAGS: string[] = list(env.VITE_POST_TAGS, INSTANCE.postTags ?? BOARD_TAGS);
+
+// Local scope of the board listing: posts carrying any of these tags,
+// with their threads. Differs from BOARD_TAGS when the listing should take
+// more than the board's name says, e.g. the tags bots post under, which
+// must not reach the title. Empty: no Local, the listing is Global.
+// config: localTags. env: VITE_LOCAL_TAGS (comma-separated)
+export const LOCAL_TAGS: string[] = list(env.VITE_LOCAL_TAGS, INSTANCE.localTags ?? BOARD_TAGS);
+
+// The listing a viewer starts with: "local" (LOCAL_TAGS) or "global"
+// (every post). The viewer's own choice (settings page) wins.
+// config: scope. env: VITE_SCOPE
+export type Scope = "local" | "global";
+export const DEFAULT_SCOPE: Scope = (env.VITE_SCOPE ?? INSTANCE.scope) === "global" ? "global" : "local";
 
 // The name before "@" in the title (see networkTitle.ts); the part after
-// it is MAIN_TAGS. "" leaves "@<tags>".
+// it is BOARD_TAGS. "" leaves "@<tags>".
 // config: network
 export const NETWORK: string = INSTANCE.network ?? DEFAULT_NETWORK;
 
-// The board title, e.g. "Strange World@kuzuha" (MAIN_TAGS ["a","b"] ->
+// The board title, e.g. "Strange World@kuzuha" (BOARD_TAGS ["a","b"] ->
 // "...@a+b", the way a board narrowed to several tags is titled).
-export const TITLE: string = networkTitle(NETWORK, MAIN_TAGS, t("network.at"));
+export const TITLE: string = networkTitle(NETWORK, BOARD_TAGS, t("network.at"));
 
 // Tags left out of every listing unless the search says otherwise (e.g. a
 // spam tag the API's auto-tagger puts on ads).
-// config: excludeTags. env: VITE_DEFAULT_EXCLUDE_TAGS (comma-separated;
+// config: excludeTags. env: VITE_EXCLUDE_TAGS (comma-separated;
 // "" = exclude nothing)
-export const DEFAULT_EXCLUDE_TAGS: string[] = list(env.VITE_DEFAULT_EXCLUDE_TAGS, INSTANCE.excludeTags ?? []);
+export const EXCLUDE_TAGS: string[] = list(env.VITE_EXCLUDE_TAGS, INSTANCE.excludeTags ?? []);
 
 // Colour theme. Every board colour is derived from one OKLCH hue
 // (0-360, see styles.css). 195 is the original blackboard (#004040) look.
@@ -99,11 +111,11 @@ export const DEFAULT_THEME_CONTROLS: Controls = controls(env.VITE_THEME_CONTROLS
 //              form, chips / inline #tag / title tags are plain text
 //              (poster names stay links: they filter by author, not tag),
 //              ?tag= and #/tag/:tag land on the plain board, and
-//              search URLs ignore tags / exclude_tags (DEFAULT_EXCLUDE_TAGS
+//              search URLs ignore tags / exclude_tags (EXCLUDE_TAGS
 //              still applies, silently).
 //   minimal  — nofilter, plus no tag display at all (no chips, no title
 //              tags, no tag counts fetched).
-// In every mode MAIN_TAGS / DEFAULT_TAGS still define the board (listing
+// In every mode BOARD_TAGS / POST_TAGS / LOCAL_TAGS still define the board (listing
 // filter, tag attached on post). Unknown values fall back to "full".
 // Read through the helpers in tagMode.ts, not directly.
 // config: tagsMode. env: VITE_TAGS_MODE

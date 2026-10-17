@@ -8,11 +8,18 @@ import { tagsInteractive } from "./tagMode";
 import { ThreadView } from "./pages/ThreadView";
 import { SettingsView } from "./pages/SettingsView";
 import { startPresence } from "./presence";
+import { noteRoute } from "./boardReturn";
 
 export function App() {
   useEffect(() => {
     return startPresence();
   }, []);
+
+  // Remembers the board view for "Back" on the settings / search views.
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    noteRoute(pathname, search);
+  }, [pathname, search]);
 
   return (
     <>

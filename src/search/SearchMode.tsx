@@ -3,6 +3,7 @@ import { t } from "../i18n";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "../components/Header";
+import { BoardBackLink } from "../components/BackLink";
 import { PostList } from "../components/PostList";
 import { Pager } from "../components/Pager";
 import { HighlightContext } from "./highlight";
@@ -27,6 +28,7 @@ export function SearchMode() {
     <>
       <a id="top" />
       <Header tags={s.tags} author={s.author} />
+      {showForm && <BoardBackLink />}
       <p />
       {showForm ? (
         <SearchForm key={key} initial={s} onSearch={(next) => setParams(searchQuery(next))} />

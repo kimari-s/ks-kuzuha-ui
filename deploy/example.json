@@ -4,15 +4,19 @@
   "messages": { "form.poster": "Name" },
   "apiBaseUrl": "https://api.example.com",
   "network": "Strange World",
-  "defaultTags": [],
-  "mainTags": [],
+  "boardTags": [],
+  "postTags": [],
+  "scope": "local",
   "excludeTags": [],
   "tagsMode": "full",
   "showTags": true,
   "theme": { "hue": 195, "accentHue": 15.59, "accentStrength": 0, "controls": "standard" },
   "links": {
     "header": [],
-    "related": [{ "label": "uploader", "href": "https://up.example.com/", "newTab": true }],
+    "related": [
+      { "label": { "en": "About", "ja": "広報室" }, "href": "about.html" },
+      { "label": "uploader", "href": "https://up.example.com/", "newTab": true }
+    ],
     "account": null
   },
   "repoUrl": "https://github.com/kimari-s/ks-kuzuha-ui"

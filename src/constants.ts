@@ -16,12 +16,13 @@ export const REPO_NAME: string = REPO_NAME_PART;
 
 // The footer's one line: "<label> v<version>", the label linking to url.
 //   - instance config "release" set (a distribution bundling this UI):
-//     its name (else "<owner>/<name>" from its url, else from the source
-//     link below), its version (none: no "vX"), its url (none: the source
-//     link below);
+//     its name (else the repository name from its url, else from the
+//     source link below), its version (none: no "vX"), its url (none: the
+//     source link below);
 //   - otherwise the source link: the instance config's "repoUrl", else
-//     package.json "repository", shown as "<owner>/<name>" from the URL
-//     path, and this UI's own version.
+//     package.json "repository", shown as the repository name (the last
+//     part of "<owner>/<name>"; the ks- prefix already says whose it is),
+//     and this UI's own version.
 const SOURCE_URL: string = INSTANCE.repoUrl || REPO_URL;
 const release = INSTANCE.release;
 export const FOOTER: { url: string; label: string; version: string } = release
@@ -36,13 +37,11 @@ function repoPath(url: string): string[] {
   return new URL(url).pathname.replace(/\.git$/, "").split("/").filter(Boolean);
 }
 
-// This UI itself, for the settings page's About block.
-export const UI_LABEL: string = footerLabel(REPO_URL);
-
+// "https://github.com/<owner>/<name>" -> "<name>".
 function footerLabel(url: string): string {
   try {
     const parts = repoPath(url);
-    return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : url;
+    return parts.length >= 2 ? parts[1] : url;
   } catch {
     return url; // not a URL: show it as given
   }

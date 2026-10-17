@@ -3,7 +3,7 @@ import { t } from "../i18n";
 import { createPost, getActiveCount, getOldestPostAt, getPostCount } from "../api";
 import { getClientId } from "../client";
 import { PostForm } from "../components/PostForm";
-import { DEFAULT_TAGS } from "../settings";
+import { POST_TAGS } from "../settings";
 import { READ_ONLY } from "../env";
 
 type Props = {
@@ -45,7 +45,7 @@ export function PostPanel({ onReload, latestCount, filterTags = [] }: Props) {
       if (trimmed) {
         await createPost({
           text: trimmed,
-          tags: [...new Set([...DEFAULT_TAGS, ...filterTags])],
+          tags: [...new Set([...POST_TAGS, ...filterTags])],
           author: tagInput.trim() || undefined,
           client_id: getClientId(),
         });

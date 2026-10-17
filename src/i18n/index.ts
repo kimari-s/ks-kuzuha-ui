@@ -11,11 +11,11 @@
 //
 // English vocabulary follows Strange World@Heyuri (Heyuri/ksphp-plus), the
 // English kuzuha-style board: Name, Post/Reload, Unread, Tree view, Standard
-// view, Latest N posts, Top / Bottom, Return, User settings, Restore
-// defaults, Current participants. Terms it lacks (reply "res", delete,
-// single view) are plain English.
+// view, Latest N posts, Top / Bottom, User settings, Restore defaults,
+// Current participants. Terms it lacks (reply "res", delete, single view,
+// "« Back" on every page that leads back) are plain English.
 
-import { INSTANCE } from "../instance";
+import { INSTANCE, type LinkLabel } from "../instance";
 import { pickLocale, queryLocale, withoutLang } from "../localePick";
 import { storageGet, storageKey, storageSet } from "../storage";
 import en from "./en.json";
@@ -104,4 +104,14 @@ const messages: Messages = { ...en, ...LOCALES[LOCALE], ...(INSTANCE.messages as
 export function t(key: MessageKey, vars?: Record<string, string | number>): string {
   const text = messages[key];
   return vars ? text.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m)) : text;
+}
+
+// A configured text given as a string or by locale ({"en": "About", "ja":
+// "広報室"}): the entry for this page's language, else "en", else the first
+// string entry. Anything else is "".
+export function localized(v: LinkLabel | null | undefined): string {
+  if (typeof v === "string") return v;
+  if (!v || typeof v !== "object") return "";
+  for (const k of [LOCALE, "en"]) if (typeof v[k] === "string") return v[k];
+  return Object.values(v).find((x): x is string => typeof x === "string") ?? "";
 }

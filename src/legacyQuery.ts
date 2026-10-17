@@ -12,7 +12,7 @@
 // post is translated.
 //
 // Not translated: ?at= picks the board's own tags (the @ selector).
-// Here the board tags are fixed at build time (MAIN_TAGS), so there is no
+// Here the board tags are fixed at build time (BOARD_TAGS), so there is no
 // equivalent; it is left in the query untouched, like any other param.
 //
 // Kept free of imports so it can be checked with plain node.

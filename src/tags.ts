@@ -1,8 +1,8 @@
 import type { Post } from "./types";
-import { DEFAULT_TAGS, MAIN_TAGS } from "./settings";
+import { BOARD_TAGS, POST_TAGS } from "./settings";
 
 // Tags every board post carries; not worth showing on each post.
-const BOARD_TAGS = new Set([...DEFAULT_TAGS, ...MAIN_TAGS]);
+const IMPLIED_TAGS = new Set([...BOARD_TAGS, ...POST_TAGS]);
 
 // Who wrote the post: the poster field (`author`, else the older
 // `meta.author` some backends send). Posts without one are unnamed.
@@ -16,7 +16,7 @@ export function posterName(post: Post): string | null {
 // the poster (some backends add one) stays, besides the name shown in the
 // poster field.
 export function visibleTags(post: Post): string[] {
-  return post.tags.filter((t) => !BOARD_TAGS.has(t));
+  return post.tags.filter((t) => !IMPLIED_TAGS.has(t));
 }
 
 // A tag link narrows the list to that tag. It stays in the tree view when

@@ -10,8 +10,10 @@ export const CONFIG_KEYS = {
   apiBaseUrl: "string",
   storagePrefix: "string",
   network: "string",
-  defaultTags: "array",
-  mainTags: "array",
+  boardTags: "array",
+  postTags: "array",
+  localTags: "array",
+  scope: "string",
   excludeTags: "array",
   tagsMode: "string",
   showTags: "boolean",
@@ -25,7 +27,7 @@ export const CONFIG_KEYS = {
 type ConfigKind = "string" | "boolean" | "array" | "object";
 
 // The JSON kind of a value ("array" and "object" kept apart, null is "null").
-function kindOf(v: unknown): string {
+export function kindOf(v: unknown): string {
   if (Array.isArray(v)) return "array";
   if (v === null) return "null";
   return typeof v;

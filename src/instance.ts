@@ -14,10 +14,15 @@
 // the app only after loadRuntimeConfig() has settled. This module must not
 // import anything that reads INSTANCE.
 
-import { checkConfig, isPlainObject } from "./configKeys";
+import { CONFIG_KEYS, checkConfig, isPlainObject, kindOf } from "./configKeys";
+
+// A link's text: one string for every language, or one per locale, e.g.
+// {"en": "About", "ja": "広報室"} (the UI's language, else "en", else the
+// first entry; i18n/index.ts localized()).
+export type LinkLabel = string | Record<string, string>;
 
 export type RelatedLink = {
-  label: string;
+  label: LinkLabel;
   href: string;
   // Default: same-tab. Set `newTab: true` for cross-origin / external
   // links that shouldn't replace the BBS view.
@@ -80,8 +85,10 @@ export type InstanceConfig = {
   // Prefix of every localStorage key (default "<repo name>.").
   storagePrefix?: string;
   network?: string;
-  defaultTags?: string[];
-  mainTags?: string[];
+  boardTags?: string[];
+  postTags?: string[];
+  localTags?: string[];
+  scope?: string;
   excludeTags?: string[];
   tagsMode?: string;
   showTags?: boolean;
@@ -113,11 +120,42 @@ function deepMerge(base: Record<string, unknown>, over: Record<string, unknown>)
   }
 }
 
+// What went wrong with config.json, for the settings page
+// (ConfigNotice): the file was there but could not be (fully) used.
+export type ConfigProblem =
+  // Not valid JSON; line / column when the browser's message gives a position.
+  | { kind: "parse"; message: string; line?: number; column?: number }
+  // Valid JSON, but not an object (e.g. an array).
+  | { kind: "notObject"; got: string }
+  // A known key with a value of the wrong JSON kind: dropped.
+  | { kind: "type"; key: string; expected: string; got: string }
+  // Keys this UI does not know (likely typos): ignored.
+  | { kind: "unknown"; keys: string[] };
+
+export const RUNTIME_CONFIG: { url: string; problems: ConfigProblem[] } = {
+  url: RUNTIME_CONFIG_URL,
+  problems: [],
+};
+
+// Line and column (1-based) of a JSON.parse error: Chromium says
+// "at position N" (newer ones add "(line L column C)"), Firefox "at line L
+// column C"; Safari gives no position.
+export function parseErrorPosition(message: string, body: string): { line: number; column: number } | null {
+  const lc = /line (\d+) column (\d+)/.exec(message);
+  if (lc) return { line: Number(lc[1]), column: Number(lc[2]) };
+  const pos = /position (\d+)/.exec(message);
+  if (!pos) return null;
+  const before = body.slice(0, Number(pos[1])).split("\n");
+  return { line: before.length, column: before[before.length - 1].length + 1 };
+}
+
 // Fetch config.json and merge it into INSTANCE. Never throws: a missing
-// file (404 or any non-2xx), a network error or a timeout keep the build-time
-// config silently; a file that is not a JSON object is ignored with a console
-// warning. Keys of the wrong type are dropped (warned) so a typo cannot take
-// the board down.
+// file (404 or any non-2xx, or an HTML page that a host serves for any
+// missing path), a network error or a timeout keep the build-time config
+// silently; a file that is not a JSON object is ignored. Keys of the wrong
+// type are dropped so a typo cannot take the board down. Each problem is
+// kept in RUNTIME_CONFIG.problems (the settings page shows them) and warned
+// in the console.
 export async function loadRuntimeConfig(): Promise<void> {
   const ctl = typeof AbortController === "function" ? new AbortController() : null;
   const timer = ctl ? window.setTimeout(() => ctl.abort(), RUNTIME_CONFIG_TIMEOUT_MS) : 0;
@@ -125,28 +163,40 @@ export async function loadRuntimeConfig(): Promise<void> {
   try {
     const res = await fetch(RUNTIME_CONFIG_URL, { cache: "no-cache", signal: ctl?.signal });
     if (!res.ok) return;
+    if ((res.headers.get("Content-Type") ?? "").toLowerCase().includes("text/html")) return;
     body = await res.text();
   } catch {
     return;
   } finally {
     if (ctl) window.clearTimeout(timer);
   }
+  const problems = RUNTIME_CONFIG.problems;
   let cfg: unknown;
   try {
     cfg = JSON.parse(body);
   } catch (e) {
-    console.warn(`[kuzuha] ${RUNTIME_CONFIG_URL}: not valid JSON, ignored (${String(e)})`);
+    const message = e instanceof Error ? e.message : String(e);
+    problems.push({ kind: "parse", message, ...parseErrorPosition(message, body) });
+    console.warn(`[kuzuha] ${RUNTIME_CONFIG_URL}: not valid JSON, ignored (${message})`);
     return;
   }
   if (!isPlainObject(cfg)) {
+    problems.push({ kind: "notObject", got: kindOf(cfg) });
     console.warn(`[kuzuha] ${RUNTIME_CONFIG_URL}: not a JSON object, ignored`);
     return;
   }
   const { unknown, badKind } = checkConfig(cfg);
-  if (unknown.length > 0) console.warn(`[kuzuha] ${RUNTIME_CONFIG_URL}: unknown keys ${unknown.join(", ")}`);
+  if (unknown.length > 0) {
+    problems.push({ kind: "unknown", keys: unknown });
+    console.warn(`[kuzuha] ${RUNTIME_CONFIG_URL}: unknown keys ${unknown.join(", ")}`);
+  }
   if (badKind.length > 0) {
     console.warn(`[kuzuha] ${RUNTIME_CONFIG_URL}: wrong value type for ${badKind.join(", ")}, ignored`);
-    for (const k of badKind) delete cfg[k];
+    const expected: Record<string, string> = CONFIG_KEYS;
+    for (const k of badKind) {
+      problems.push({ kind: "type", key: k, expected: expected[k], got: kindOf(cfg[k]) });
+      delete cfg[k];
+    }
   }
   for (const k of Object.keys(cfg)) if (k.startsWith("$")) delete cfg[k];
   deepMerge(INSTANCE as Record<string, unknown>, cfg);
