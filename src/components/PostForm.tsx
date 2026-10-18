@@ -5,6 +5,9 @@ import { TEXT_MAX_LEN } from "../constants";
 import { relatedLinks } from "../config/links";
 import { formatJstDateShort } from "../format";
 import { useFeature } from "../features";
+import { Link, useLocation } from "react-router-dom";
+import { tagPath } from "../tags";
+import { tagsInteractive } from "../tagMode";
 
 type Props = {
   onSubmit: (text: string, tagInput: string) => Promise<void>;
@@ -23,6 +26,9 @@ export function PostForm({ onSubmit, onUnread, onLatest, postCount, activeCount,
   const [text, setText] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const location = useLocation();
+  // A tag link only filters, so it is left out when tags are not interactive.
+  const links = relatedLinks.filter((l) => !l.tag || tagsInteractive());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -113,12 +119,14 @@ export function PostForm({ onSubmit, onUnread, onLatest, postCount, activeCount,
 
       <hr />
 
-      {relatedLinks.length > 0 && (
+      {links.length > 0 && (
         <div className="link_row">
-          {relatedLinks.map((l, i) => (
-            <Fragment key={`${l.href}|${i}`}>
+          {links.map((l, i) => (
+            <Fragment key={`${l.href}|${l.tag ?? ""}|${i}`}>
               {i > 0 && <>&nbsp;|&nbsp;</>}
-              {l.newTab ? (
+              {l.tag ? (
+                <Link to={tagPath(l.tag, location.pathname, location.search)}>{localized(l.label)}</Link>
+              ) : l.newTab ? (
                 <a href={l.href} target="_blank" rel="noopener noreferrer">{localized(l.label)}</a>
               ) : (
                 <a href={l.href}>{localized(l.label)}</a>

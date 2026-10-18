@@ -22,3 +22,15 @@ export function noteRoute(pathname: string, search: string): void {
 export function boardReturn(): string {
   return lastBoard ?? "/";
 }
+
+export type BoardView = "standard" | "tree";
+
+// The board view a page belongs to, for the header's View menu: the board
+// pages themselves, or for every other page (settings, a thread, a single
+// post) the view "Back" returns to. Never "none", so the menu always marks
+// one view as current.
+export function boardView(pathname: string): BoardView {
+  if (pathname.startsWith("/tree")) return "tree";
+  if (pathname === "/") return "standard";
+  return boardReturn().startsWith("/tree") ? "tree" : "standard";
+}

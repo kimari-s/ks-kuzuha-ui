@@ -2,6 +2,7 @@ import { Footer } from "../components/Footer";
 import { t } from "../i18n";
 import { Header } from "../components/Header";
 import { PostForm } from "../components/PostForm";
+import { Memo } from "../components/Memo";
 import { PostList } from "../components/PostList";
 import { BottomControls } from "../components/BottomControls";
 import { Pager } from "../components/Pager";
@@ -40,6 +41,7 @@ function BoardMode() {
     <>
       <a id="top" />
       <Header />
+      <Memo />
       <p />
       {READ_ONLY ? (
         <div className="bbsstats">{t("form.readOnlyPost")}</div>

@@ -48,6 +48,8 @@
   "post.deleted": "Flushed.",
   "search.keyword": "Keywords",
   "search.submit": "Search",
+  "search.clear": "Clear",
+  "search.clear.hint": "Empty the fields (exclude tags back to the default)",
   "search.tags": "Tags",
   "search.excludeTags": "Exclude tags",
   "search.poster": "Name",
@@ -82,5 +84,6 @@
   "confignotice.type": "\"{key}\" must be {expected}, but it is {got}: this setting is ignored.",
   "confignotice.unknown": "Unknown keys, ignored (a typo?): {keys}",
   "confignotice.hint": "The board keeps working with the default settings. Fix the file (save it as UTF-8), upload it again and reload this page.",
-  "confignotice.hintUnknown": "The other settings in the file are used. Check the spelling of these keys."
+  "confignotice.hintUnknown": "The other settings in the file are used. Check the spelling of these keys.",
+  "memo.title": "Memo"
 }

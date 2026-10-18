@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import type { Post } from "../types";
 import { listPosts, type BoolOp } from "../api";
 import { Header } from "../components/Header";
+import { Memo, memoTags } from "../components/Memo";
 import { BoardBackLink } from "../components/BackLink";
 import { Pager } from "../components/Pager";
 import { ThreadTree } from "../components/ThreadTree";
@@ -72,6 +73,7 @@ export function TreeSearchMode() {
     <>
       <a id="top" />
       <Header tags={s.tags} author={s.author} />
+      {!showForm && memoTags(s) && <Memo tags={memoTags(s)!} />}
       {showForm && <BoardBackLink />}
       <p />
       {showForm ? (

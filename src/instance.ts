@@ -29,7 +29,7 @@ export type RelatedLink = {
   newTab?: boolean;
   // Instead of href: narrow the list to this tag (an ordinary tag filter,
   // so the title shows it), keeping the current view and top controls.
-  // Header links with a tag are left out when tags are not interactive
+  // Links with a tag are left out when tags are not interactive
   // (tagsMode nofilter / minimal).
   tag?: string;
 };
@@ -95,6 +95,10 @@ export type InstanceConfig = {
   theme?: { hue?: number; accentHue?: number; accentStrength?: number; controls?: string };
   font?: FontConfig | null;
   links?: { header?: RelatedLink[]; related?: RelatedLink[]; account?: AccountLink | null };
+  // The memo box at the top of a listing, by tag (components/Memo.tsx).
+  memo?: Record<string, string>;
+  // The operator's text on the About page, by language (public/about.html).
+  about?: Record<string, string>;
   // Footer source link (default: package.json "repository"), e.g. the repo
   // of a distribution that bundles this UI. Ignored when release is set.
   repoUrl?: string;
@@ -110,7 +114,7 @@ const RUNTIME_CONFIG_NAME = "config.json";
 const RUNTIME_CONFIG_URL = new URL(RUNTIME_CONFIG_NAME, new URL(import.meta.env.BASE_URL, document.baseURI)).href;
 const RUNTIME_CONFIG_TIMEOUT_MS = 5000;
 
-// Objects merge key by key (theme, font, links, messages, release); anything else
+// Objects merge key by key (theme, font, links, messages, memo, release); anything else
 // (strings, arrays, null) replaces the build-time value.
 function deepMerge(base: Record<string, unknown>, over: Record<string, unknown>): void {
   for (const [k, v] of Object.entries(over)) {

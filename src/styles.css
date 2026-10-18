@@ -294,9 +294,12 @@ pre.msgnormal {
 /* "[NEW]" since-last-visit marker on post headers — inline-code styling
    (#001010 bg + faint border) so the lime-olive text stays sharp instead
    of going washed-out the way an opacity-only treatment did. */
+/* NEW: a small label filled with the accent colour, its text in the menus'
+   near-black, so it follows the accent setting. At accent strength 0 the
+   accent is the text white, so the label reads light grey on dark. */
 .new-marker {
-  color: #99CC33;
-  background: rgba(0, 0, 0, 0.25);
+  color: var(--menu-bg);
+  background: var(--accent);
   border-radius: 3px;
   padding: 0.05em 0.2em;
   font-family: var(--font-mono);
@@ -515,6 +518,7 @@ pre.msgtree .post-menu-items a, pre.msgtree .post-menu-items a:link, pre.msgtree
   outline: none;
 }
 .post-menu-items .menu-off { display: block; padding: 2px 10px; color: var(--menu-off); cursor: default; }
+.post-menu-items .menu-check { margin-right: 0.3em; }
 /* The header's "View" (Header ViewMenu): the ■ menu's box and items; the
    summary reads like the other header links. */
 .view-menu-summary { color: var(--link); }
@@ -534,3 +538,15 @@ pre.msgtree .post-menu-items a, pre.msgtree .post-menu-items a:link, pre.msgtree
 /* Tags in the heading — title size, link colour; clicking narrows to that tag alone */
 .pagetitle a.title-tag, .pagetitle a.title-tag:link, .pagetitle a.title-tag:visited { color: var(--link); }
 .pagetitle a.title-tag:hover { color: var(--accent); }
+
+/* The memo box (Memo.tsx): a frame with its title on the border. */
+.memo {
+  margin: 0.5em 0 0;
+  padding: 0.1em 0.6em 0.4em;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.memo > legend { padding: 0 0.3em; }
