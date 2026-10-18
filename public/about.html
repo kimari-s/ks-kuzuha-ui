@@ -7,7 +7,8 @@
   The small script at the end reads config.json (the same folder), picks the
   language the way the board does (?lang=, the viewer's saved choice, the
   browser's languages unless "localeAuto" is false, "locale", then English),
-  applies the viewer's colours and the configured font, and fills in what is
+  applies the viewer's colours and the configured font, shows the operator's
+  text (config "about", by language) in place of the first line, and fills in what is
   running, each linked to its source: the release (config "release",
   linked to release.url), this UI's version (its repository) and the API's
   GET /v1/meta (at config "apiBaseUrl"): "impl impl_version", linked to
@@ -97,6 +98,7 @@ dl.api { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 
 dl.api dt { color: var(--sep); }
 dl.api dd { margin: 0; overflow-wrap: anywhere; }
 .note { font-size: 0.85rem; color: var(--sep); }
+.operator { white-space: pre-line; overflow-wrap: anywhere; }
 @media (max-width: 30em) {
   dl.running { grid-template-columns: minmax(0, 1fr); gap: 0; }
   dl.running dd { margin: 0 0 0.6em; }
@@ -110,7 +112,8 @@ dl.api dd { margin: 0; overflow-wrap: anywhere; }
   <div class="small back-link"><a href="./">« Back</a></div>
   <hr>
   <h1>About</h1>
-  <p>A kuzuha-style message board.</p>
+  <p data-k="intro">A kuzuha-style message board.</p>
+  <p class="operator" data-k="about" hidden></p>
   <h2>What is running</h2>
   <dl class="running">
     <dt data-row="release">Release</dt>
@@ -127,7 +130,8 @@ dl.api dd { margin: 0; overflow-wrap: anywhere; }
   <div class="small back-link"><a href="./">« 戻る</a></div>
   <hr>
   <h1>広報室</h1>
-  <p>くずは風の掲示板です。</p>
+  <p data-k="intro">くずは風の掲示板です。</p>
+  <p class="operator" data-k="about" hidden></p>
   <h2>動いているもの</h2>
   <dl class="running">
     <dt data-row="release">配布物</dt>
@@ -264,6 +268,43 @@ dl.api dd { margin: 0; overflow-wrap: anywhere; }
 
   function each(sel, fn) { Array.prototype.forEach.call(document.querySelectorAll(sel), fn); }
 
+  // The operator's text (config "about": { "<lang>": "<text>" }): the page's
+  // language, else en, else the first entry. Plain text, line breaks kept,
+  // http(s) URLs linked, and [text](http(s) URL) as a link.
+  function showAbout(about, lang) {
+    var text = null;
+    if (isObj(about)) {
+      text = str(about[lang]) || str(about.en);
+      if (!text) {
+        var keys = Object.keys(about).filter(function (k) { return str(about[k]); });
+        text = keys.length ? about[keys[0]] : null;
+      }
+    }
+    each('[data-k="intro"]', function (p) { p.hidden = !!text; });
+    each('[data-k="about"]', function (p) {
+      p.textContent = "";
+      p.hidden = !text;
+      if (!text) return;
+      // Captures: [label](url) gives 1 and 2, a bare URL 3.
+      var re = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g;
+      var last = 0;
+      var m;
+      function link(label, url) {
+        if (!httpUrl(url)) return document.createTextNode(label);
+        var a = document.createElement("a");
+        a.href = httpUrl(url);
+        a.textContent = label;
+        return a;
+      }
+      while ((m = re.exec(text)) !== null) {
+        if (m.index > last) p.appendChild(document.createTextNode(text.slice(last, m.index)));
+        p.appendChild(m[3] ? link(m[3], m[3]) : link(m[1], m[2]));
+        last = re.lastIndex;
+      }
+      if (last < text.length) p.appendChild(document.createTextNode(text.slice(last)));
+    });
+  }
+
   function showRelease(rel) {
     var name = isObj(rel) ? str(rel.name) : null;
     var version = isObj(rel) ? str(rel.version) : null;
@@ -351,6 +392,7 @@ dl.api dd { margin: 0; overflow-wrap: anywhere; }
     applyTheme(cfg, prefix);
     applyFont(cfg.font);
     if (str(build.uiRepo)) each('[data-k="ui-repo"]', function (a) { a.href = build.uiRepo; });
+    showAbout(cfg.about, lang);
     showRelease(cfg.release);
     showMeta(undefined);
     var base = typeof env.apiBaseUrl === "string" ? env.apiBaseUrl : typeof cfg.apiBaseUrl === "string" ? cfg.apiBaseUrl : "";

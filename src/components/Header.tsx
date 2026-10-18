@@ -7,22 +7,29 @@ import { tagsInteractive, useTagsVisible } from "../tagMode";
 import { TITLE } from "../settings";
 import { accountLink, headerExtraLinks } from "../config/links";
 import { rememberedExposed } from "../selfCheck";
-import { boardReturn } from "../boardReturn";
+import { boardReturn, boardView, type BoardView } from "../boardReturn";
 import { useMenuClose } from "../hooks/useMenuClose";
 
 // "View": a drop-down of the board views, Standard and Tree, in the look
 // and behaviour of the ■ post menu (<details>, the same classes; a click
 // outside or Escape closes it). Picking one switches the view and keeps the
 // current search / filter (carry). The view being shown is listed greyed
-// out and not clickable. (The old Tree / Standard toggle had no access key.)
-function ViewMenu({ active, carry }: { active: "standard" | "tree" | null; carry: string }) {
+// out and not clickable, with a check mark before it. The menu works out
+// that view itself (boardView), on every page: off the board pages it is the
+// view "Back" returns to. (The old Tree /
+// Standard toggle had no access key.)
+function ViewMenu({ carry }: { carry: string }) {
+  const active = boardView(useLocation().pathname);
   const box = useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = useState(false);
   useMenuClose(box, open);
   const close = () => box.current?.removeAttribute("open");
-  const item = (view: "standard" | "tree", to: string, label: string, hint: string) =>
+  const item = (view: BoardView, to: string, label: string, hint: string) =>
     active === view ? (
-      <span className="menu-off" aria-disabled="true" data-view={view}>{label}</span>
+      <span className="menu-off" aria-disabled="true" aria-current="true" data-view={view}>
+        <span className="menu-check" aria-hidden="true">✓</span>
+        {label}
+      </span>
     ) : (
       <Link to={to} title={hint} onClick={close} data-view={view}>{label}</Link>
     );
@@ -147,10 +154,7 @@ export function Header({ pageName, tags: given = [], author = "" }: Props) {
       </span>
       <span className="link_upper">
         {accountLink && <link rel="stylesheet" href={ICON_FONT_HREF} />}
-        <ViewMenu
-          active={isTree ? "tree" : location.pathname === "/" ? "standard" : null}
-          carry={carry}
-        />
+        <ViewMenu carry={carry} />
         &nbsp;|&nbsp;
         {/* Switches only the controls at the top; the list stays narrowed. */}
         {/* The view being shown is a toggle: accent colour and underlined

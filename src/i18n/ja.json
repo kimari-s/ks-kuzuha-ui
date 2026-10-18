@@ -48,6 +48,8 @@
   "post.deleted": "流されました",
   "search.keyword": "キーワード",
   "search.submit": "検索",
+  "search.clear": "クリア",
+  "search.clear.hint": "入力欄を空にする（除外タグは初期値に戻す）",
   "search.tags": "タグ",
   "search.excludeTags": "除外タグ",
   "search.poster": "投稿者",
@@ -82,5 +84,6 @@
   "confignotice.type": "「{key}」は {expected} でなければなりませんが、{got} です。この設定は無視しています。",
   "confignotice.unknown": "知らないキーを無視しています（綴り間違い？）: {keys}",
   "confignotice.hintUnknown": "ファイルのほかの設定は使われています。これらのキーの綴りを確かめてください。",
-  "confignotice.hint": "掲示板は初期設定のまま動いています。ファイルを直して（UTF-8 で保存）アップロードし直し、このページを再読み込みしてください。"
+  "confignotice.hint": "掲示板は初期設定のまま動いています。ファイルを直して（UTF-8 で保存）アップロードし直し、このページを再読み込みしてください。",
+  "memo.title": "メモ"
 }

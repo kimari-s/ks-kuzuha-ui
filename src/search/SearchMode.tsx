@@ -3,6 +3,7 @@ import { t } from "../i18n";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "../components/Header";
+import { Memo, memoTags } from "../components/Memo";
 import { BoardBackLink } from "../components/BackLink";
 import { PostList } from "../components/PostList";
 import { Pager } from "../components/Pager";
@@ -28,6 +29,7 @@ export function SearchMode() {
     <>
       <a id="top" />
       <Header tags={s.tags} author={s.author} />
+      {!showForm && memoTags(s) && <Memo tags={memoTags(s)!} />}
       {showForm && <BoardBackLink />}
       <p />
       {showForm ? (

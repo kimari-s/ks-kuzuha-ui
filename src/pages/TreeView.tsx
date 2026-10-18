@@ -6,6 +6,7 @@ import { createPost, getActiveCount, getLatestPostId, getOldestPostAt, getPostCo
 import { getClientId } from "../client";
 import { rotateHighlight } from "../hooks/useNewHighlight";
 import { Header } from "../components/Header";
+import { Memo } from "../components/Memo";
 import { PostForm } from "../components/PostForm";
 import { BottomControls } from "../components/BottomControls";
 import { Pager } from "../components/Pager";
@@ -233,6 +234,7 @@ function TreeBoard() {
     <>
       <a id="top" />
       <Header />
+      <Memo />
       <p />
       {READ_ONLY ? (
         <div className="bbsstats">{t("form.readOnlyPost")}</div>

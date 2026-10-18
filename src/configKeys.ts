@@ -20,6 +20,8 @@ export const CONFIG_KEYS = {
   theme: "object",
   font: "object",
   links: "object",
+  memo: "object",
+  about: "object",
   repoUrl: "string",
   release: "object",
 } as const;

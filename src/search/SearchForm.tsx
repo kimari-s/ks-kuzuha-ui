@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { t } from "../i18n";
 import type { BoolOp, Tag } from "../api";
 import { queryTags } from "../api";
-import type { SearchState } from "./state";
+import { EMPTY_SEARCH, type SearchState } from "./state";
 import { tagsInteractive } from "../tagMode";
 
 const SUGGEST_LIMIT = 10;
@@ -81,6 +81,20 @@ export function SearchForm({ initial, onSearch }: Props) {
   const tagOptions = useTagSuggestions(withTags ? tags : "");
   const excludeOptions = useTagSuggestions(withTags ? exclude : "");
 
+  // Back to an empty form (the default exclusion kept); the list is left as
+  // it is until the next search.
+  function clear() {
+    setQ(EMPTY_SEARCH.q);
+    setQOp(EMPTY_SEARCH.qOp);
+    setTags(EMPTY_SEARCH.tags.join(" "));
+    setTagsOp(EMPTY_SEARCH.tagsOp);
+    setExclude(EMPTY_SEARCH.excludeTags.join(" "));
+    setExcludeOp(EMPTY_SEARCH.excludeOp);
+    setAuthor(EMPTY_SEARCH.author);
+    setSince(EMPTY_SEARCH.since);
+    setUntil(EMPTY_SEARCH.until);
+  }
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     onSearch({
@@ -103,7 +117,8 @@ export function SearchForm({ initial, onSearch }: Props) {
         <div>
           <input id="sq" type="text" value={q} onChange={(e) => setQ(e.target.value)} />
           <OpSelect words={wordsOf(q)} value={qOp} onChange={setQOp} />{" "}
-          <input type="submit" value={t("search.submit")} className="btn" />
+          <input type="submit" value={t("search.submit")} className="btn" />{" "}
+          <input type="button" value={t("search.clear")} title={t("search.clear.hint")} className="btn" onClick={clear} />
         </div>
         {withTags && (
           <>

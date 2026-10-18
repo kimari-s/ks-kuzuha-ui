@@ -128,7 +128,9 @@ its tag: posts carry it (`postTags`), and the Local listing is made of it
 | `links.header` | `[]` | Header links: `{label, href, newTab?, tag?}` (`tag` filters instead of linking). `label` is a string or a map by locale ([Custom pages](#custom-pages)) |
 | `links.related` | the About page | Link row under the post form, same shape. A list replaces the default `[{"label": {"en": "About", "ja": "広報室"}, "href": "about.html"}]`; `[]` removes the row ([Custom pages](#custom-pages)) |
 | `links.account` | `null` | Account icon: `{href, authHintKey?}` |
-| `repoUrl` | `package.json` `repository` | Source link in the footer (e.g. the repo of a distribution bundling this UI). The footer shows the repository name without the owner: `ks-kuzuha-ui v0.5.0-alpha.1` |
+| `about` | `{}` | The operator's text on the About page, in place of its first line, by language: `{"ja": "…", "en": "…"}` (the page's language, else `en`, else the first entry). Plain text, line breaks kept, http(s) URLs linked, `[text](https://…)` as a link ([Custom pages](#custom-pages)) |
+| `memo` | `{}` | The memo box at the top of a listing, by tag: `{"<tag>": "<text>"}`. The board's own listing takes its first board tag (`""` without board tags), a listing narrowed to exactly one tag takes that tag. Plain text, line breaks kept |
+| `repoUrl` | `package.json` `repository` | Source link in the footer (e.g. the repo of a distribution bundling this UI). The footer shows the repository name without the owner: `ks-kuzuha-ui v0.6.0-alpha.1` |
 | `release` | `null` | The product this UI ships in: `{name, version, url}`. When set, the footer reads `name vVERSION` linking to `url` (e.g. `ks-kuzuha-alternative v0.1.0-alpha.1`) instead of the source link and the UI's version. The About page shows it next to the UI's own version and the API's `/v1/meta` |
 
 Unknown keys and values of the wrong type draw a build warning; keys starting
@@ -295,6 +297,9 @@ the default one, so keep the About entry to keep its link:
   }
 }
 ```
+
+A few lines of your own on the About page need no copy: config `about`
+(`{"ja": "…", "en": "…"}`) shows them in place of its first line.
 
 `"related": []` removes the row. Upgrading the UI replaces `about.html`:
 put your own text in a page with another name, or copy `about.html` under
